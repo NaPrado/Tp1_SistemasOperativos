@@ -1,4 +1,4 @@
-#include "shm.h"
+#include "include/shm.h"
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -23,6 +23,6 @@ void * createSHM(const char * name,size_t size){
 		perror("mmap");
 		exit(EXIT_FAILURE);
 	}
-
+	close(fd);
 	return p;
 }

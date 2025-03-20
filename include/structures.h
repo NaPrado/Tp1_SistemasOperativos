@@ -24,11 +24,11 @@ typedef struct {
 
 //asignar nombres
 typedef struct { 
-    sem_t A; // Se usa para indicarle a la vista que hay cambios por imprimir 
-    sem_t B; // Se usa para indicarle al master que la vista terminó de imprimir 
+    sem_t show_needed; // Se usa para indicarle a la vista que hay cambios por imprimir 
+    sem_t show_done; // Se usa para indicarle al master que la vista terminó de imprimir 
     sem_t C; // Mutex para evitar inanición del master al acceder al estado 
     sem_t D; // Mutex para el estado del juego 
     sem_t E; // Mutex para la siguiente variable 
-    unsigned int F; // Cantidad de jugadores leyendo el estado 
-} semaphoreStatus;
+    unsigned int player_reading_status; // Cantidad de jugadores leyendo el estado 
+} semaphoresStatus;
 #endif
