@@ -26,6 +26,7 @@ BIN_view = $(BINDIR)/view
 
 .PHONY: all
 all: $(PROGRAMS)
+	make clean
 
 master: $(OBJS_master)
 	@mkdir -p $(BINDIR)
