@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <unistd.h>
 #include "include/shm.h"
 #include "include/structures.h"
+
 
 void printView(int * board,size_t height,size_t width){
     for (size_t i = 0; i < width; i++){
@@ -12,6 +16,12 @@ void printView(int * board,size_t height,size_t width){
     }
     
 }
+
+void clear_screen() {
+    const char *clear = "\033[2J\033[H"; // Código ANSI para limpiar pantalla y mover el cursor a la esquina superior izquierda
+    write(STDOUT_FILENO, clear, strlen(clear));
+}
+
 
 int main(int argc, char const *argv[]){
     
