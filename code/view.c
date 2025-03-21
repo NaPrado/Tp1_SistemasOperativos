@@ -10,7 +10,7 @@
 void printView(int * board, size_t height, size_t width) {
     for (size_t i = 0; i < width; i++){
         for (size_t j = 0; j < height; j++){
-            printf("%d",board[i*j]);
+            printf("%d",board[i+j*height]);
         }
         printf("\n");
     }
@@ -31,12 +31,13 @@ int main(int argc, char const *argv[]) {
     semaphoresStatus * semStatus = getOpenSHM("/game_sync", sizeof(semaphoresStatus));
     //chequear el size
     gameStatus * gStatus = getOpenSHM("/game_state", sizeof(gameStatus) + (sizeof(int) * (heigth * width)));
-    printf("heigth %d,%d", heigth, gStatus->heigth);
-    printf("width %d,%d", width, gStatus->width);
-    while (1) {
-        sem_wait(&(semStatus->show_needed));
+    while (!gStatus->can_end) {
+        sem_t show_needed=semStatus->show_needed;
+        sem_wait(&(show_needed)); 
+        clear_screen();
         printView(gStatus->board, heigth, width);
-        sem_post(&(semStatus->show_needed));
+        sem_t show_done=semStatus->show_done;
+        sem_wait(&(show_done));
     }
     
     

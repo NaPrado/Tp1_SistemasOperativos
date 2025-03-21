@@ -12,7 +12,7 @@ BINDIR = bin
 PROGRAMS = master player view
 
 SOURCES_master = $(SRCDIR)/master.c $(SRCDIR)/shm.c
-SOURCES_player = $(SRCDIR)/player.c $(SRCDIR)/shm.c
+SOURCES_player = $(SRCDIR)/player.c $(SRCDIR)/shm.c $(SRCDIR)/random.c
 SOURCES_view = $(SRCDIR)/view.c $(SRCDIR)/shm.c
 
 OBJS_master = $(SOURCES_master:.c=.o)

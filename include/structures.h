@@ -22,13 +22,12 @@ typedef struct {
   int board[]; // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1  
 } gameStatus;
 
-//asignar nombres
 typedef struct { 
-    sem_t show_needed; // Se usa para indicarle a la vista que hay cambios por imprimir 
-    sem_t show_done; // Se usa para indicarle al master que la vista terminó de imprimir 
-    sem_t C; // Mutex para evitar inanición del master al acceder al estado 
-    sem_t D; // Mutex para el estado del juego 
-    sem_t E; // Mutex para la siguiente variable 
-    unsigned int player_reading_status; // Cantidad de jugadores leyendo el estado 
+  sem_t show_needed;  // Indica a la vista que hay cambios por imprimir  
+  sem_t show_done;  // Indica al máster que la vista terminó de imprimir  
+  sem_t master_mutex;  // Evita inanición del máster al acceder al estado  
+  sem_t game_state_mutex;  // Protege el estado del juego contra modificaciones concurrentes  
+  sem_t player_read_count_mutex;  // Protege la variable 'player_reading_status'  
+  unsigned int player_reading_status;  // Cantidad de jugadores leyendo el estado  
 } semaphoresStatus;
 #endif
