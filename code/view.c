@@ -66,10 +66,7 @@ int main(int argc, char const *argv[]) {
         print_view(game_state->board, heigth, width,game_state);
         print_stats(game_state);
         sem_t show_done=game_sync->show_done;
-        sem_wait(&(show_done));
+        sem_post(&(show_done));
     }
-    
-    
-
     return 0;
 }
