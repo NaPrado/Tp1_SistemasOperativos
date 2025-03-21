@@ -1,7 +1,11 @@
 #include "../include/shm.h"
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 
 
-void * createSHM(const char * name, size_t size){
+void * create_SHM(const char * name, size_t size){
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open(name, O_RDWR | O_CREAT, 0666/* 110110110 rwxrwxrwx*/);
@@ -25,7 +29,7 @@ void * createSHM(const char * name, size_t size){
 	return p;
 }
 
-void * getOpenSHM(const char * name, size_t size){
+void * get_open_SHM(const char * name, size_t size){
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open(name, O_RDONLY, 0644/* 110100100 rwxrwxrwx*/);

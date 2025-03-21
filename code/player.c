@@ -10,11 +10,11 @@ int main(int argc, char const *argv[]){
     heigth=atoi(argv[1]);
     width=atoi(argv[2]);
     
-    semaphoresStatus* semStatus=getOpenSHM("/game_sync",sizeof(semaphoresStatus));
+    semaphores_status* game_sync=getOpenSHM("/game_sync",sizeof(semaphores_status));
     //chequear el size
-    gameStatus* gStatus=getOpenSHM("/game_state",sizeof(gameStatus) + sizeof(int)*(heigth*width-1));
+    game_status* game_state=getOpenSHM("/game_state",sizeof(game_status) + sizeof(int)*(heigth*width-1));
     randomize();
-    while (!gStatus->can_end){
+    while (!game_state->can_end){
         putchar(randInt(0,8));
     }
 

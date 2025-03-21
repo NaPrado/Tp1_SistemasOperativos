@@ -28,15 +28,15 @@ int main(int argc, char const *argv[]) {
     int heigth, width;
     heigth = atoi(argv[1]);
     width = atoi(argv[2]);
-    semaphoresStatus * semStatus = getOpenSHM("/game_sync", sizeof(semaphoresStatus));
+    semaphores_status * game_sync = getOpenSHM("/game_sync", sizeof(semaphores_status));
     //chequear el size
-    gameStatus * gStatus = getOpenSHM("/game_state", sizeof(gameStatus) + (sizeof(int) * (heigth * width)));
-    while (!gStatus->can_end) {
-        sem_t show_needed=semStatus->show_needed;
+    game_status * game_state = getOpenSHM("/game_state", sizeof(game_status) + (sizeof(int) * (heigth * width)));
+    while (!game_state->can_end) {
+        sem_t show_needed=game_sync->show_needed;
         sem_wait(&(show_needed)); 
         clear_screen();
-        printView(gStatus->board, heigth, width);
-        sem_t show_done=semStatus->show_done;
+        printView(game_state->board, heigth, width);
+        sem_t show_done=game_sync->show_done;
         sem_wait(&(show_done));
     }
     

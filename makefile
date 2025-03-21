@@ -2,7 +2,7 @@
 CC = gcc
 
 # Flags de compilacion
-CFLAGS = -Wall -pedantic -std=c99 -g -O2 -Iinclude
+CFLAGS = -Wall -pedantic -g -O2 -Iinclude
 
 
 SRCDIR = code
