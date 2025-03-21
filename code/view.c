@@ -6,11 +6,29 @@
 #include "../include/shm.h"
 #include "../include/structures.h"
 
+// Vector de códigos de color
+const char *colores[] = {
+    "\033[0;30m",  // Negro
+    "\033[0;31m",  // Rojo
+    "\033[0;32m",  // Verde
+    "\033[0;33m",  // Amarillo
+    "\033[0;34m",  // Azul
+    "\033[0;35m",  // Magenta
+    "\033[0;36m",  // Cian
+    "\033[0;37m",  // Blanco
+    "\033[0;90m"   // Gris claro
+};
 
-void printView(int * board, size_t height, size_t width) {
+const char *colores_reset = "\033[0m"; // Restablecer colores
+
+void print_view(int * board, size_t height, size_t width, game_status* game_state) {
     for (size_t i = 0; i < width; i++){
         for (size_t j = 0; j < height; j++){
-            printf("%d",board[i+j*height]);
+            if(game_state->players[0].x==i && game_state->players[0].y==j){
+                printf("%s",colores[2]);
+            }
+            printf("%d,%s",board[i+j*height],colores_reset);
+
         }
         printf("\n");
     }
@@ -21,6 +39,16 @@ void clear_screen() {
     const char *clear = "\033[2J\033[H"; // Código ANSI para limpiar pantalla y mover el cursor a la esquina superior izquierda
     write(STDOUT_FILENO, clear, strlen(clear));
 }
+static void print_player_stats(player_status* player_state){
+    printf("name:%s\tpoints:%d\tvalidM:%d\tinvalidM:%d\tcoords:(%d,%d)\n",player_state->name_player,player_state->points,player_state->cant_valid_movements,player_state->cant_invalid_movements,player_state->x,player_state->y);
+}
+
+void print_stats(game_status* game_state){
+    for (size_t i = 0; i < game_state->cant_players; i++){
+        print_player_stats(&(game_state->players)[i]);
+    }
+    
+}
 
 
 int main(int argc, char const *argv[]) {
@@ -28,14 +56,15 @@ int main(int argc, char const *argv[]) {
     int heigth, width;
     heigth = atoi(argv[1]);
     width = atoi(argv[2]);
-    semaphores_status * game_sync = getOpenSHM("/game_sync", sizeof(semaphores_status));
+    semaphores_status * game_sync = get_open_SHM("/game_sync", sizeof(semaphores_status));
     //chequear el size
-    game_status * game_state = getOpenSHM("/game_state", sizeof(game_status) + (sizeof(int) * (heigth * width)));
+    game_status * game_state = get_open_SHM("/game_state", sizeof(game_status) + (sizeof(int) * (heigth * width)));
     while (!game_state->can_end) {
         sem_t show_needed=game_sync->show_needed;
         sem_wait(&(show_needed)); 
         clear_screen();
-        printView(game_state->board, heigth, width);
+        print_view(game_state->board, heigth, width,game_state);
+        print_stats(game_state);
         sem_t show_done=game_sync->show_done;
         sem_wait(&(show_done));
     }
