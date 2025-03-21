@@ -10,9 +10,9 @@ int main(int argc, char const *argv[]){
     heigth=atoi(argv[1]);
     width=atoi(argv[2]);
     
-    semaphoresStatus* semStatus=createSHM("/game_sync",sizeof(semaphoresStatus));
+    semaphoresStatus* semStatus=getOpenSHM("/game_sync",sizeof(semaphoresStatus));
     //chequear el size
-    gameStatus* gStatus=getOpenSHM("/game_state",sizeof(gameStatus)+sizeof(int)*heigth*width); 
+    gameStatus* gStatus=getOpenSHM("/game_state",sizeof(gameStatus) + sizeof(int)*(heigth*width-1));
 
     return 0;
 }
