@@ -24,10 +24,12 @@ const char *colores_reset = "\033[0m"; // Restablecer colores
 void print_view(int * board, size_t height, size_t width, game_status* game_state) {
     for (size_t i = 0; i < width; i++){
         for (size_t j = 0; j < height; j++){
-            if(game_state->players[0].x==i && game_state->players[0].y==j){
-                printf("%s",colores[2]);
+            for (size_t k = 0; k < game_state->cant_players; k++){
+                 if(game_state->players[k].x==i && game_state->players[k].y==j){
+                    printf("%s",colores[k]);
+                } 
             }
-            printf("%d,%s",board[i+j*height],colores_reset);
+            printf("%d,%s",board[i+j*width],colores_reset);
 
         }
         printf("\n");
@@ -53,20 +55,20 @@ void print_stats(game_status* game_state){
 
 int main(int argc, char const *argv[]) {
     
-    int heigth, width;
-    heigth = atoi(argv[1]);
+    int height, width;
+    height = atoi(argv[1]);
     width = atoi(argv[2]);
-    semaphores_status * game_sync = get_open_SHM("/game_sync", sizeof(semaphores_status));
+    semaphores_status * game_sync = get_game_sync();
     //chequear el size
-    game_status * game_state = get_open_SHM("/game_state", sizeof(game_status) + (sizeof(int) * (heigth * width)));
+    game_status * game_state = get_game_state(sizeof(game_status) + (sizeof(int) * (height * width)));
+    sem_t * show_done= &(game_sync->show_done);
+    sem_t * show_needed= &(game_sync->show_needed);
     while (!game_state->can_end) {
-        sem_t show_needed=game_sync->show_needed;
-        sem_wait(&(show_needed)); 
+        sem_wait(show_needed);
         clear_screen();
-        print_view(game_state->board, heigth, width,game_state);
+        print_view(game_state->board, height, width,game_state);
         print_stats(game_state);
-        sem_t show_done=game_sync->show_done;
-        sem_post(&(show_done));
+        sem_post(show_done);
     }
     return 0;
 }
