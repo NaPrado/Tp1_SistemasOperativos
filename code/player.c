@@ -6,18 +6,20 @@
 
 #include <fcntl.h>
 
-can_player_move(int* board,int width,int height,int x, int y){
-    bool ret=false;
-    for (size_t i = -1; i < 2; i++){
-        for (size_t j = -1; j < 2; j++){
-            if (i!=0 && j!=0 && x+i<width && y+j<height){
-                ret=(board[width*(x+i)+y+j]>0);
-                if (ret){
-                    return ret;
-                }
+int can_player_move(int width, int height, int board[][width], int x, int y){
+    int ret = 0;
+
+    for (int i = -1; i <= 1 && ret == 0; i++) {
+        for (int j = -1; j <= 1 && ret == 0; j++) {
+
+            if (!(i == 0 && j == 0) && (x + i >= 0 && y + j >= 0) && (x + i < width && y + j < height)) {
+                ret += board[y + j][x + i] > 0;
             }
+
         }
     }
+    
+    return ret;
     
 }
 
@@ -45,13 +47,19 @@ int main(int argc, char const *argv[]){
 
     FILE * file = fopen("debug.txt", "w+");
 
-    bool cant_move=false;
+    if (file == NULL) {
+        exit(1);
+    }
+
+    int cant_move = 0;
     
     while (!cant_move){
         
         putchar(randInt(0,7));
 
          // entry section
+
+        fprintf("%d ", cant_move);
 
         sem_wait(master_mutex);
         sem_wait(player_read_count_mutex);      // espero modificar variable
@@ -65,7 +73,11 @@ int main(int argc, char const *argv[]){
 
         //critical zone
 
-        cant_move=can_player_move(game_state->board,width,height,game_state->players[player_number].x,game_state->players[player_number].y);
+        cant_move = !can_player_move(width, height, game_state->board, game_state->players[player_number].x, game_state->players[player_number].y);
+
+        if (cant_move) {
+            break;
+        }
 
         //exit Section
         sem_wait(player_read_count_mutex);      // espero modificar variable
