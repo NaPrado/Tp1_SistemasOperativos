@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <fcntl.h>
+
 
 int main(int argc, char const *argv[]){
 
@@ -26,30 +28,50 @@ int main(int argc, char const *argv[]){
             player=i;  
         }
     }
+
+    int file = open("debug.txt", O_CREAT | O_RDWR | O_TRUNC);
+
     
     while (!game_state->players[player].can_move){
+
+        // char aux = game_state->players[player].can_move;
+        
+        char buf[] = {'0'};
+        write(file, buf, 1);
+
+        
+        putchar(randInt(0,7));
+
+
         // entry section
-        sem_wait(game_state_mutex);     // espero a entrar
+
+        sem_wait(master_mutex);
+
         sem_wait(player_read_count_mutex);      // espero modificar variable
         game_sync->player_reading_status++;     // modifico variable
+
         if (game_sync->player_reading_status == 1) {    // si soy el primero
-            sem_wait(master_mutex);                // espero a que no haya writer
+            sem_wait(game_state_mutex);                // espero a que no haya writer
         }
         sem_post(player_read_count_mutex);      // dejo modificar variable
-        sem_post(game_state_mutex);     // dejo entrar
+        sem_post(master_mutex);     // dejo entrar
 
         //critical zone
-        
+
+
 
         //exit Section
         sem_wait(player_read_count_mutex);      // espero modificar variable
         game_sync->player_reading_status--;     // modifico variable
         if (game_sync->player_reading_status == 0) {    // si soy el ultimo
-            sem_post(master_mutex);                // dejo que haya writer
+            sem_post(game_state_mutex);                // dejo que haya writer
         }
         sem_post(player_read_count_mutex);      // dejo modificar variable
-        putchar(randInt(0,7));  
+
         
     }
+
+    close(file);
+
     return 0;
 }
