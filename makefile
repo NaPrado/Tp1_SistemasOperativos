@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wall -pedantic -g -O2 -Iinclude
 
 
-SRCDIR = code
+SRCDIR = src
 INCDIR = include
 BINDIR = bin
 

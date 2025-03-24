@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <fcntl.h>
+#include <time.h>
 
 int can_player_move(int width, int height, int board[][width], int x, int y){
     int ret = 0;
@@ -36,13 +37,17 @@ int main(int argc, char const *argv[]){
     sem_t * game_state_mutex= &(game_sync->game_state_mutex);
     sem_t * master_mutex= &(game_sync->master_mutex);
     sem_t * player_read_count_mutex= &(game_sync->player_read_count_mutex);
-    int player_number;
+    int player_number = 0;
     pid_t pid=getpid();
     for (size_t i = 0; i < game_state->cant_players; i++){
         if ((game_state->players[i].pid)==pid){
             player_number=i;  
         }
     }
+    
+    sem_init(master_mutex, 1, 1);
+    sem_init(game_state_mutex, 1, 1);
+    sem_init(player_read_count_mutex, 1, 1);
 
     // FILE * file = fopen("debug.txt", "w+");
 
@@ -50,12 +55,18 @@ int main(int argc, char const *argv[]){
     //     exit(1);
     // }
 
-    putchar(randInt(0, 7));
+    // putchar(randInt(0, 7));
+
+    struct timespec time = {.tv_sec = 0, .tv_nsec = 100};
+    nanosleep(&time, NULL);
     
-    while (!game_state->can_end){
+    while (!game_state->players[player_number].can_move){
 
         // seccion de entrada
-        sem_wait(master_mutex); // espero en la cola
+
+        
+
+        // sem_wait(master_mutex); // espero en la cola
 
         sem_wait(player_read_count_mutex); // espero a modificar variable
         game_sync->player_reading_status++;
@@ -63,10 +74,12 @@ int main(int argc, char const *argv[]){
             sem_wait(game_state_mutex); // espero a que writer libere
         }
 
-        sem_post(master_mutex); // dejo al siguiente en la cola
+        // sem_post(master_mutex); // dejo al siguiente en la cola
         sem_post(player_read_count_mutex); // dejo modificar variable
 
         // seccion critica de lectura
+        // putchar(randInt(0,7));
+        putchar(player_number);
 
 
         // seccion de salida
@@ -77,7 +90,6 @@ int main(int argc, char const *argv[]){
         }
         sem_post(player_read_count_mutex); // dejo modificar variable
 
-        putchar(randInt(0, 7));
         
     }
 
