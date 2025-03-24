@@ -33,7 +33,6 @@ int main(int argc, char const *argv[]){
     semaphores_status * game_sync = get_game_sync();
     //chequear el size
     game_status * game_state = get_game_state(sizeof(game_status) + (sizeof(int) * (height * width)));
-    randomize();
     sem_t * game_state_mutex= &(game_sync->game_state_mutex);
     sem_t * master_mutex= &(game_sync->master_mutex);
     sem_t * player_read_count_mutex= &(game_sync->player_read_count_mutex);
@@ -44,6 +43,7 @@ int main(int argc, char const *argv[]){
             player_number=i;  
         }
     }
+    srand(time(NULL) * (player_number + 1));
     
     sem_init(master_mutex, 1, 1);
     sem_init(game_state_mutex, 1, 1);
@@ -78,8 +78,8 @@ int main(int argc, char const *argv[]){
         sem_post(player_read_count_mutex); // dejo modificar variable
 
         // seccion critica de lectura
-        // putchar(randInt(0,7));
-        putchar(player_number);
+        putchar(randInt(0,7));
+        // putchar(player_number);
 
 
         // seccion de salida
