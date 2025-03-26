@@ -43,11 +43,11 @@ int main(int argc, char const *argv[]){
             player_number=i;  
         }
     }
-    srand(time(NULL) * (player_number + 1));
+    srand(time(NULL) + player_number);
     
-    sem_init(master_mutex, 1, 1);
-    sem_init(game_state_mutex, 1, 1);
-    sem_init(player_read_count_mutex, 1, 1);
+    // sem_init(master_mutex, 1, 2);
+    // sem_init(game_state_mutex, 1, 1);
+    // sem_init(player_read_count_mutex, 1, 1);
 
     // FILE * file = fopen("debug.txt", "w+");
 
@@ -56,17 +56,13 @@ int main(int argc, char const *argv[]){
     // }
 
     // putchar(randInt(0, 7));
-
-    struct timespec time = {.tv_sec = 0, .tv_nsec = 100};
-    nanosleep(&time, NULL);
     
     while (!game_state->players[player_number].can_move){
+        usleep(1);
+        putchar(randInt(0,7));
 
         // seccion de entrada
-
-        
-
-        // sem_wait(master_mutex); // espero en la cola
+        sem_post(master_mutex);
 
         sem_wait(player_read_count_mutex); // espero a modificar variable
         game_sync->player_reading_status++;
@@ -74,11 +70,10 @@ int main(int argc, char const *argv[]){
             sem_wait(game_state_mutex); // espero a que writer libere
         }
 
-        // sem_post(master_mutex); // dejo al siguiente en la cola
+        sem_post(master_mutex); // dejo al siguiente en la cola
         sem_post(player_read_count_mutex); // dejo modificar variable
 
         // seccion critica de lectura
-        putchar(randInt(0,7));
         // putchar(player_number);
 
 
@@ -89,6 +84,7 @@ int main(int argc, char const *argv[]){
             sem_post(game_state_mutex); // dejo al writer
         }
         sem_post(player_read_count_mutex); // dejo modificar variable
+
 
         
     }
