@@ -45,21 +45,7 @@ int main(int argc, char const *argv[]){
     }
     srand(time(NULL) + player_number);
     
-    // sem_init(master_mutex, 1, 2);
-    // sem_init(game_state_mutex, 1, 1);
-    // sem_init(player_read_count_mutex, 1, 1);
-
-    // FILE * file = fopen("debug.txt", "w+");
-
-    // if (file == NULL) {
-    //     exit(1);
-    // }
-
-    // putchar(randInt(0, 7));
-    
-    while (!game_state->players[player_number].can_move){
-        usleep(1);
-        putchar(randInt(0,7));
+    while (!game_state->players[player_number].can_move) {
 
         // seccion de entrada
         sem_post(master_mutex);
@@ -74,7 +60,6 @@ int main(int argc, char const *argv[]){
         sem_post(player_read_count_mutex); // dejo modificar variable
 
         // seccion critica de lectura
-        // putchar(player_number);
 
 
         // seccion de salida
@@ -84,12 +69,11 @@ int main(int argc, char const *argv[]){
             sem_post(game_state_mutex); // dejo al writer
         }
         sem_post(player_read_count_mutex); // dejo modificar variable
-
-
+        
+        usleep(1);
+        putchar(randInt(0,7));
         
     }
-
-    // fclose(file);
 
     return 0;
 }
