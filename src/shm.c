@@ -20,7 +20,7 @@ void * create_SHM(const char * name, size_t size, mode_t mode) {
 		perror("ftruncate");
 		exit(EXIT_FAILURE);
 	}
-	void * p = mmap(NULL, size, PROT_WRITE | PROT_READ,MAP_SHARED, fd, 0);
+	void * p = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED) {
 		perror("mmap");
 		exit(EXIT_FAILURE);
@@ -58,11 +58,11 @@ semaphores_status * get_game_sync() {
 		perror("shm_open");
 		exit(EXIT_FAILURE);
 	}
-	void * p = mmap(NULL, sizeof(semaphores_status),PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	void * p = mmap(NULL, sizeof(semaphores_status), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED) {
 		perror("mmap");
 		exit(EXIT_FAILURE);
 	}
 	close(fd);
-	return (semaphores_status *)p;
+	return (semaphores_status *) p;
 }

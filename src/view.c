@@ -33,7 +33,7 @@ const char *colorescabeza[] = {
 
 const char *colores_reset = "\033[0;0m"; // Restablecer colores
 
-void print_view(int * board, size_t height, size_t width, game_status* game_state) {
+void print_view(int * board, size_t height, size_t width, game_status * game_state) {
     for (size_t i = 0; i < height; i++) {
         for (size_t j = 0; j < width; j++) {
             for (size_t k = 0; k < game_state->cant_players; k++) {
@@ -84,10 +84,11 @@ int main(int argc, char const *argv[]) {
     game_status * game_state = get_game_state(sizeof(game_status) + (sizeof(int) * (height * width)));
     sem_t * show_done= &(game_sync->show_done);
     sem_t * show_needed= &(game_sync->show_needed);
+
     while (!game_state->can_end) {
         sem_wait(show_needed);
         clear_screen();
-        print_view(game_state->board, height, width,game_state);
+        print_view(game_state->board, height, width, game_state);
         print_stats(game_state);
         sem_post(show_done);
     }
