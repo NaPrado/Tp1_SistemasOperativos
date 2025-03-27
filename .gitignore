@@ -3,3 +3,4 @@ bin/.DS_Store
 bin/master
 bin/player
 bin/view
+.bash_history
