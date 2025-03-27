@@ -15,7 +15,8 @@ enum params_default {DEF_WIDTH = 10, DEF_HEIGHT = 10, DEF_DELAY = 200, DEF_TIMEO
 
 #define MAX_NUM_PLAYERS 9
 
-int setParams(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]);
+void setParams(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]);
+int checkParams(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]);
 
 int main(int argc, char const *argv[]) {
 
@@ -24,6 +25,11 @@ int main(int argc, char const *argv[]) {
     char * players[MAX_NUM_PLAYERS] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
     setParams(argc, argv, num_params, &view, players);
+
+    if (checkParams(num_params, &view, players) == 1) {
+        fprintf(stderr, "Error: At least one player must be specified using -p.\n");
+        exit(EXIT_FAILURE);
+    }
     
     printf("Width: %d\n", num_params[0]);
     printf("Height: %d\n", num_params[1]);
@@ -41,48 +47,55 @@ int main(int argc, char const *argv[]) {
     return 0;
 }
 
-int setParams(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
+void setParams(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
     int i = 1;
     while (i+1 < argc) {
         if (strcmp(argv[i], FLAG_WIDTH) == 0) {
-            if ((num_params[0] = atoi(argv[i+1])) == 0) {
-                num_params[0] = DEF_WIDTH;
-            }
+            num_params[0] = atoi(argv[i+1]);
             i += 2;
         } else if (strcmp(argv[i], FLAG_HEIGHT) == 0) {
-            if ((num_params[1] = atoi(argv[i+1])) == 0) {
-                num_params[1] = DEF_HEIGHT;
-            }
+            num_params[1] = atoi(argv[i+1]);
             i += 2;
         } else if (strcmp(argv[i], FLAG_DELAY) == 0) {
-            if ((num_params[2] = atoi(argv[i+1])) == 0) {
-                num_params[2] = DEF_DELAY;
-            }
+            num_params[2] = atoi(argv[i+1]);
             i += 2;
         } else if (strcmp(argv[i], FLAG_SEED) == 0) {
-            if ((num_params[3] = atoi(argv[i+1])) == 0) {
-                num_params[3] = time(NULL);
-            }
+            num_params[3] = atoi(argv[i+1]);
             i += 2;
         } else if (strcmp(argv[i], FLAG_VIEW) == 0) {
             *view = argv[i+1];
             i += 2;
         } else if (strcmp(argv[i], FLAG_TIMEOUT) == 0) {
-            if ((num_params[5] = atoi(argv[i+1])) == 0) {
-                num_params[5] = DEF_TIMEOUT;
-            }
+            num_params[4] = atoi(argv[i+1]);
             i += 2;
         } else if (strcmp(argv[i], FLAG_PLAYER) == 0) {
             int j = 0;
-            while (players[j] != NULL) {
-                j++;
+            i++;
+            while (i < argc && strcmp(argv[i], FLAG_DELAY) != 0 && strcmp(argv[i], FLAG_HEIGHT) != 0 && strcmp(argv[i], FLAG_WIDTH) != 0 && strcmp(argv[i], FLAG_SEED) != 0 && strcmp(argv[i], FLAG_VIEW) != 0 && strcmp(argv[i], FLAG_TIMEOUT) != 0 && strcmp(argv[i], FLAG_PLAYER) != 0) {
+                players[j++] = argv[i++];
             }
-            players[j] = argv[i+1];
-            i += 2;
-        } else {
-            return 1;
         }
     }
+}
+
+int checkParams(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
+    if (num_params[0] <= DEF_WIDTH) {
+        num_params[0] = DEF_WIDTH;
+    }
+    if (num_params[1] <= DEF_HEIGHT) {
+        num_params[1] = DEF_HEIGHT;
+    }
+    if (num_params[2] <= 0) {
+        num_params[2] = DEF_DELAY;
+    }
+    if (num_params[3] <= 0) {
+        num_params[3] = time(NULL);
+    }
+    if (num_params[4] <= 0) {
+        num_params[4] = DEF_TIMEOUT;
+    }
+    if (players[0] == NULL) {
+        return 1;
+    }
     return 0;
-    
 }
