@@ -5,10 +5,10 @@
 #include <stdio.h>
 
 
-void * create_SHM(const char * name, size_t size){
+void * create_SHM(const char * name, size_t size, mode_t mode) {
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
-	fd = shm_open(name, O_RDWR | O_CREAT, 0666/* 110110110 rwxrwxrwx*/);
+	fd = shm_open(name, O_RDWR | O_CREAT, mode/* 110110110 rwxrwxrwx*/);
 	//shm_open es un open
 	//mode solo para crear, sino se ignora
 	if (fd == -1) {
@@ -29,7 +29,7 @@ void * create_SHM(const char * name, size_t size){
 	return p;
 }
 
-game_status * get_game_state(size_t size){
+game_status * get_game_state(size_t size) {
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open("/game_state", O_RDONLY, 0644/* 110100100 rwxrwxrwx*/);
@@ -48,7 +48,7 @@ game_status * get_game_state(size_t size){
 	return p;
 }
 
-semaphores_status * get_game_sync(){
+semaphores_status * get_game_sync() {
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open("/game_sync", O_RDWR, 0666/* 110110110 rwxrwxrwx*/);
