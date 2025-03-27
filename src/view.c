@@ -34,22 +34,27 @@ const char *colorescabeza[] = {
 const char *colores_reset = "\033[0;0m"; // Restablecer colores
 
 void print_view(int * board, size_t height, size_t width, game_status * game_state) {
+    int flag = 0;
     for (size_t i = 0; i < height; i++) {
         for (size_t j = 0; j < width; j++) {
             for (size_t k = 0; k < game_state->cant_players; k++) {
                 if(board[j + i * width] == -k){
                     if (game_state->players[k].x == j && game_state->players[k].y == i) {
-                        printf("%s", colorescabeza[k]);
+                        printf("%s|   |", colorescabeza[k]);
+                        flag = 1;
                     } else {
-                        printf("%s", colores[k]);
+                        printf("%s|   |", colores[k]);
+                        flag = 1;
                     }
                 } 
             }
-            if (board[j + i * width] < 0) {
-                printf("|%d |%s", board[j + i * width], colores_reset);
-            } else {
-                printf("| %d |%s", board[j + i * width], colores_reset);
+            if (board[j + i * width] < 0 && !flag) {
+                printf("|%d |", board[j + i * width]);
+            } else if (!flag) {
+                printf("| %d |", board[j + i * width]);
             }
+            flag = 0;
+            printf("%s", colores_reset);
         }
         printf("\n");
     }

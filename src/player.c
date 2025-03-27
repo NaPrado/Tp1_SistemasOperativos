@@ -27,12 +27,13 @@ int can_player_move(int width, int height, int board[][width], int x, int y){
 int main(int argc, char const *argv[]){
 
     int height, width;
-    height=atoi(argv[1]);
-    width=atoi(argv[2]);
+    width = atoi(argv[1]);
+    height = atoi(argv[2]);
     
     semaphores_status * game_sync = get_game_sync();
     //chequear el size
     game_status * game_state = get_game_state(sizeof(game_status) + (sizeof(int) * (height * width)));
+    
     sem_t * game_state_mutex= &(game_sync->game_state_mutex);
     sem_t * master_mutex= &(game_sync->master_mutex);
     sem_t * player_read_count_mutex= &(game_sync->player_read_count_mutex);
@@ -44,7 +45,6 @@ int main(int argc, char const *argv[]){
         }
     }
     srand(time(NULL) + player_number);
-    
     while (!game_state->players[player_number].can_move) {
 
         // seccion de entrada

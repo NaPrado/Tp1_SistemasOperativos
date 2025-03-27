@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 
-void * create_SHM(const char * name, size_t size, mode_t mode) {
+void * create_shmem(const char * name, size_t size, mode_t mode) {
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open(name, O_RDWR | O_CREAT, mode/* 110110110 rwxrwxrwx*/);
