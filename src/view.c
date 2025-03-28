@@ -5,7 +5,8 @@
 #include <unistd.h>
 #include "../include/shm.h"
 #include "../include/structures.h"
-
+#define BG_GOLD   "\x1b[48;5;178m"  // Fondo dorado
+#define FG_BLACK  "\x1b[30m"        // Texto negro
 // Vector de códigos de color
 const char *colores[] = {
     "\033[40;97m",  // Fondo negro, letra blanca
@@ -33,17 +34,42 @@ const char *colorescabeza[] = {
 
 const char *colores_reset = "\033[0;0m"; // Restablecer colores
 
+void print_horizontal_border(int width){
+    printf("%s%s",BG_GOLD,FG_BLACK);
+    for (size_t i = 0; i < width+2; i++){
+        printf("  *  ");
+    }
+    printf("%s\n", colores_reset);    
+}
+
+void print_chomp_champs_logo(int width){
+    print_horizontal_border(width);
+    printf("%s%s  *  %s",BG_GOLD,FG_BLACK,"\x1b[38;5;21m");
+    for (int i = 0; i < width-1; i++){
+        if ((width/2)-1==i){
+            printf("%sCHOMPCHAMPS",width%2!=0?" ":"");
+        }
+        else{
+            printf("     ");
+        }
+    }
+    printf("%s%s%s*  \n",BG_GOLD,FG_BLACK,width%2!=0?"":" ");
+    print_horizontal_border(width);
+}
+
 void print_view(int * board, size_t height, size_t width, game_status * game_state) {
     int flag = 0;
+    print_chomp_champs_logo(width);
     for (size_t i = 0; i < height; i++) {
+        printf("%s%s  *  %s",BG_GOLD,FG_BLACK,colores_reset);
         for (size_t j = 0; j < width; j++) {
             for (size_t k = 0; k < game_state->cant_players; k++) {
                 if(board[j + i * width] == -k){
                     if (game_state->players[k].x == j && game_state->players[k].y == i) {
-                        printf("%s|   |", colorescabeza[k]);
+                        printf("%s     ", colorescabeza[k]);
                         flag = 1;
                     } else {
-                        printf("%s|   |", colores[k]);
+                        printf("%s     ", colores[k]);
                         flag = 1;
                     }
                 } 
@@ -56,9 +82,9 @@ void print_view(int * board, size_t height, size_t width, game_status * game_sta
             flag = 0;
             printf("%s", colores_reset);
         }
-        printf("\n");
+        printf("%s%s  *  %s\n",BG_GOLD,FG_BLACK,colores_reset);
     }
-    
+    print_horizontal_border(width);
 }
 
 void clear_screen() {
@@ -76,8 +102,8 @@ void print_stats(game_status* game_state){
         print_player_stats(&(game_state->players)[i]);
     }
 }
-
-
+//esto es para hacer ruido si es invalida la pos
+//int invalid[9]={0};
 
 int main(int argc, char const *argv[]) {
     
@@ -92,6 +118,7 @@ int main(int argc, char const *argv[]) {
 
     while (!game_state->can_end) {
         sem_wait(show_needed);
+        //checkIfInvalid();
         clear_screen();
         print_view(game_state->board, height, width, game_state);
         print_stats(game_state);
