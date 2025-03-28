@@ -9,7 +9,12 @@
 #include "shm.h"
 #include "random.h"
 
-enum params_default {DEF_WIDTH = 10, DEF_HEIGHT = 10, DEF_DELAY = 200, DEF_TIMEOUT = 10};
+enum params_default {
+    DEF_WIDTH = 10, 
+    DEF_HEIGHT = 10, 
+    DEF_DELAY = 200, 
+    DEF_TIMEOUT = 10
+};
 
 // flags de los parametros
 #define FLAG_WIDTH "-w"
@@ -38,34 +43,35 @@ enum params_default {DEF_WIDTH = 10, DEF_HEIGHT = 10, DEF_DELAY = 200, DEF_TIMEO
  * @param players: array de jugadores
  * 
 */
-void setParams(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]);
+void set_params(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]);
 
 // chequea los parametros, si no son validos los setea a los valores por defecto
 // devuelve EXIT_FAILURE si no hay jugadores, EXIT_SUCCESS si todo ok
 /*
- * checkParams: chequea los parametros
+ * check_params: chequea los parametros
  * num_params: array donde se guardan los parametros
  * view: puntero a la vista
  * players: array de punteros a los jugadores
  * 
 */
-int checkParams(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]);
-void fillBoard(int width, int height, int * board);
+int check_params(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]);
+void fill_board(int width, int height, int * board);
 
 int main(int argc, char const *argv[]) {
-
+    //params
     int num_params[5] = {0};
     char * view = NULL;
     char * players[MAX_NUM_PLAYERS] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
-    setParams(argc, argv, num_params, &view, players);
+    set_params(argc, argv, num_params, &view, players);
 
-    if (checkParams(num_params, &view, players) == EXIT_FAILURE) {
+    if (check_params(num_params, &view, players) == EXIT_FAILURE) {
         fprintf(stderr, "Error: At least one player must be specified using -p.\n");
         exit(EXIT_FAILURE);
     }
+    ///////////////////////////////////////////////////////////////////////////
 
-
+    //SHM
     game_status * game = (game_status *) create_shmem("/game_state", sizeof(game_status) + (sizeof(int) * (num_params[1] * num_params[0])), 0644);
     semaphores_status * sync = (semaphores_status *) create_shmem("/game_sync", sizeof(semaphores_status), 0666);
 
@@ -112,7 +118,8 @@ int main(int argc, char const *argv[]) {
     sem_init(&sync->player_read_count_mutex, 1, 1);
     sync->player_reading_status = 0;
 
-    fillBoard(game->width, game->height, game->board);
+    fill_board(game->width, game->height, game->board);
+    //////////////////////////////////////////////////////////////////////////////////
 
     // Abrir pipes
     int fd[game->cant_players][2];
@@ -122,8 +129,10 @@ int main(int argc, char const *argv[]) {
             exit(EXIT_FAILURE);
         }
     }
+    /////////////////////////////////////////////////////////////////
     
-    
+    //execve
+
     int pid = 0;
 
     for (int i = 0; i < game->cant_players; i++) {
@@ -181,14 +190,25 @@ int main(int argc, char const *argv[]) {
         wait(NULL);
     }
     
-    
-    
-    
-    
     return 0;
 }
 
-void setParams(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void set_params(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
     int i = 1;
     while (i+1 < argc) {
         if (strcmp(argv[i], FLAG_WIDTH) == 0) {
@@ -219,7 +239,7 @@ void setParams(int argc, char const *argv[], int * num_params, char ** view, cha
     }
 }
 
-int checkParams(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
+int check_params(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
     if (num_params[0] <= DEF_WIDTH) {
         num_params[0] = DEF_WIDTH;
     }
@@ -241,7 +261,7 @@ int checkParams(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS])
     return EXIT_SUCCESS;
 }
 
-void fillBoard(int width, int height, int * board) {
+void fill_board(int width, int height, int * board) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             board[i * width + j] = randInt(1, 9);
