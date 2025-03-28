@@ -81,9 +81,9 @@ int main(int argc, char const *argv[]) {
     int timeout = num_params[4];
     srand(num_params[3]);
 
-    game->cant_players = 0;
-    while (players[game->cant_players] != NULL) {
-        game->cant_players++;
+    game->amount_players = 0;
+    while (players[game->amount_players] != NULL) {
+        game->amount_players++;
     }
 
     printf("\033[H\033[J");
@@ -93,23 +93,23 @@ int main(int argc, char const *argv[]) {
     printf("timeout: %d\n", timeout);
     printf("seed: %d\n", num_params[3]);
     printf("view: %s\n", view == NULL ? "-" : view);
-    printf("num_players: %d\n", game->cant_players);
-    for (int i = 0; i < game->cant_players; i++) {
+    printf("num_players: %d\n", game->amount_players);
+    for (int i = 0; i < game->amount_players; i++) {
         printf("  %s\n", players[i]);
     }
 
-    for (int j = 0; j < game->cant_players; j++) {
+    for (int j = 0; j < game->amount_players; j++) {
         strcpy(game->players[j].name_player, players[j]);
         game->players[j].points = 0;
-        game->players[j].cant_invalid_movements = 0;
-        game->players[j].cant_valid_movements = 0;
+        game->players[j].amount_invalid_movements = 0;
+        game->players[j].amount_valid_movements = 0;
         game->players[j].x = rand() % game->width;
         game->players[j].y = rand() % game->height;
         game->players[j].pid = 0;
-        game->players[j].can_move = true;
+        game->players[j].cant_move = true;
     }
 
-    game->can_end = false;
+    game->cant_end = false;
 
     sem_init(&sync->show_needed, 1, 0);
     sem_init(&sync->show_done, 1, 0);
@@ -122,8 +122,8 @@ int main(int argc, char const *argv[]) {
     //////////////////////////////////////////////////////////////////////////////////
 
     // Abrir pipes
-    int fd[game->cant_players][2];
-    for (int i = 0; i < game->cant_players; i++) {
+    int fd[game->amount_players][2];
+    for (int i = 0; i < game->amount_players; i++) {
         if (pipe(fd[i]) == -1) {
             perror("Error: pipe failed.\n");
             exit(EXIT_FAILURE);
@@ -135,7 +135,7 @@ int main(int argc, char const *argv[]) {
 
     int pid = 0;
 
-    for (int i = 0; i < game->cant_players; i++) {
+    for (int i = 0; i < game->amount_players; i++) {
         if ((pid = fork()) < 0) {
             perror("Error: fork failed.\n");
             exit(EXIT_FAILURE);
@@ -171,7 +171,7 @@ int main(int argc, char const *argv[]) {
 
     fd_set read_fds;
     int max_fd = 0;
-    for (int i = 0; i < game->cant_players; i++) {
+    for (int i = 0; i < game->amount_players; i++) {
         if (fd[i][1] > max_fd) {
             max_fd = fd[i][0];
         }
@@ -186,7 +186,7 @@ int main(int argc, char const *argv[]) {
     printf("Read from player %d: %s", 0, buff);
 
     
-    for (int i = 0; i < game->cant_players; i++) {
+    for (int i = 0; i < game->amount_players; i++) {
         wait(NULL);
     }
     

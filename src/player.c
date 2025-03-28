@@ -39,13 +39,13 @@ int main(int argc, char const *argv[]){
     sem_t * player_read_count_mutex= &(game_sync->player_read_count_mutex);
     int player_number = 0;
     pid_t pid=getpid();
-    for (size_t i = 0; i < game_state->cant_players; i++){
+    for (size_t i = 0; i < game_state->amount_players; i++){
         if ((game_state->players[i].pid)==pid){
             player_number=i;  
         }
     }
     srand(time(NULL) + player_number);
-    while (!game_state->players[player_number].can_move) {
+    while (!game_state->players[player_number].cant_move) {
 
         // seccion de entrada
         sem_post(master_mutex);

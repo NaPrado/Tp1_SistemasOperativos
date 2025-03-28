@@ -6,19 +6,19 @@
 typedef struct { 
     char name_player[16]; // Nombre del jugador 
     unsigned int points; // Puntaje 
-    unsigned int cant_invalid_movements; // Cantidad de solicitudes de movimientos inválidas realizadas 
-    unsigned int cant_valid_movements; // Cantidad de solicitudes de movimientos válidas realizadas 
+    unsigned int amount_invalid_movements; // Cantidad de solicitudes de movimientos inválidas realizadas 
+    unsigned int amount_valid_movements; // Cantidad de solicitudes de movimientos válidas realizadas 
     unsigned short x, y; // Coordenadas x e y en el tablero 
     pid_t pid; // Identificador de proceso 
-    bool can_move; // Indica si el jugador tiene movimientos válidos disponibles 
+    bool cant_move; // Indica si el jugador no tiene movimientos válidos disponibles 
   } player_status;
 
 typedef struct { 
   unsigned short width; // Ancho del tablero 
   unsigned short height; // Alto del tablero 
-  unsigned int cant_players; // Cantidad de jugadores 
+  unsigned int amount_players; // Cantidad de jugadores 
   player_status players[9]; // Lista de jugadores  
-  bool can_end; // Indica si el juego se ha terminado 
+  bool cant_end; // Indica si el juego no se ha terminado 
   int board[]; // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1  
 } game_status;
 
