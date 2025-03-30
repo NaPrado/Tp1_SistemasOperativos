@@ -36,7 +36,7 @@ game_status * get_game_state(size_t size) {
 	//shm_open es un open
 	//mode solo para crear, sino se ignora
 	if (fd == -1) {
-		perror("shm_open");
+		perror("get_game_state");
 		exit(EXIT_FAILURE);
 	}
 	void * p = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
@@ -45,7 +45,7 @@ game_status * get_game_state(size_t size) {
 		exit(EXIT_FAILURE);
 	}
 	close(fd);
-	return p;
+	return (game_status *) p;
 }
 
 semaphores_status * get_game_sync() {
@@ -55,7 +55,7 @@ semaphores_status * get_game_sync() {
 	//shm_open es un open
 	//mode solo para crear, sino se ignora
 	if (fd == -1) {
-		perror("shm_open");
+		perror("get_game_sync");
 		exit(EXIT_FAILURE);
 	}
 	void * p = mmap(NULL, sizeof(semaphores_status), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
