@@ -38,6 +38,9 @@ typedef struct {
     size_t amount_players;
 } parameters;
 
+extern char *optarg;
+extern int optind, opterr, optopt;
+
 void set_params(int argc, char * const argv[], parameters * params) {
     int op;
     if (argc < 2) {
