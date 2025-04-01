@@ -114,7 +114,11 @@ int main(int argc, char const *argv[]){
         sem_wait(player_read_count_mutex); // espero a modificar variable
         if (game_sync->player_reading_status-- == 1) sem_post(game_state_mutex); // dejo al writer
         sem_post(player_read_count_mutex); // dejo modificar variable
-        write(1,&next_dir,sizeof(next_dir));
+        //to wait
+        sizeof(next_dir)/sizeof(next_dir);
+        
+        write(1,&next_dir,1);
+        sleep(1);
     }
 
     return 0;
