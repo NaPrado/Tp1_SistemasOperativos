@@ -45,9 +45,35 @@ int main(int argc, char const *argv[]){
         }
     }
     srand(time(NULL) + player_number);
+    /* 
+    while(1){
+        recibir_movimiento(...);
+        wait(writer);
+        wait(mutex);
+        post(writer);
+        ejecutar_movimiento(...);
+        post(mutex);
+    }
+    while(1){
+        wait(writer);
+        post(writer);
+
+        wait(readers_count_mutex);
+        if(readers++=0){
+            wait(mutex);
+        }
+        post(readers_count_mutex);
+
+        consultar_estado(...);
+
+        wait(readers_count_mutex);
+
+    }
+    */
     while (!game_state->players[player_number].cant_move) {
 
         // seccion de entrada
+        sem_wait(master_mutex);
         sem_post(master_mutex);
 
         sem_wait(player_read_count_mutex); // espero a modificar variable
