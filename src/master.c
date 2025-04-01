@@ -27,95 +27,76 @@ enum params_default {
 
 #define MAX_NUM_PLAYERS 9
 
-/* 
- * setea los parametros de la partida
- * @param argc: cantidad de argumentos
- * @param argv: argumentos
- * @param num_params: array donde se guardan los parametros
- * @param num_params[0]: ancho del tablero
- * @param num_params[1]: alto del tablero
- * @param num_params[2]: delay entre movimientos
- * @param num_params[3]: seed para el random
- * @param num_params[4]: timeout para el juego
- * @param view: puntero a la vista
- * @param players: array de punteros a los jugadores
- * @param view: vista del juego
- * @param players: array de jugadores
- * 
-*/
-void set_params(int argc, char const *argv[], int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
-    int i = 1;
-    while (i+1 < argc) {
-        if (strcmp(argv[i], FLAG_WIDTH) == 0) {
-            num_params[0] = atoi(argv[i+1]);
-            i += 2;
-        } else if (strcmp(argv[i], FLAG_HEIGHT) == 0) {
-            num_params[1] = atoi(argv[i+1]);
-            i += 2;
-        } else if (strcmp(argv[i], FLAG_DELAY) == 0) {
-            num_params[2] = atoi(argv[i+1]);
-            i += 2;
-        } else if (strcmp(argv[i], FLAG_SEED) == 0) {
-            num_params[3] = atoi(argv[i+1]);
-            i += 2;
-        } else if (strcmp(argv[i], FLAG_VIEW) == 0) {
-            *view = (char *) argv[i+1];
-            i += 2;
-        } else if (strcmp(argv[i], FLAG_TIMEOUT) == 0) {
-            num_params[4] = atoi(argv[i+1]);
-            i += 2;
-        } else if (strcmp(argv[i], FLAG_PLAYER) == 0) {
-            int j = 0;
-            i++;
-            while (i < argc && strcmp(argv[i], FLAG_DELAY) != 0 && strcmp(argv[i], FLAG_HEIGHT) != 0 && strcmp(argv[i], FLAG_WIDTH) != 0 && strcmp(argv[i], FLAG_SEED) != 0 && strcmp(argv[i], FLAG_VIEW) != 0 && strcmp(argv[i], FLAG_TIMEOUT) != 0 && strcmp(argv[i], FLAG_PLAYER) != 0) {
-                players[j++] = (char *) argv[i++];
+typedef struct {
+    size_t width; // ancho del tablero
+    size_t height; // alto del tablero
+    size_t delay;
+    size_t timeout;
+    size_t seed;
+    char * view;
+    char * players[MAX_NUM_PLAYERS];
+    size_t amount_players;
+} parameters;
+
+void set_params(int argc, char * const argv[], parameters * params) {
+    int op;
+    if (argc < 2) {
+        perror("Error: At least one player must be specified using -p.");
+        exit(EXIT_FAILURE);
+    }
+    while ((op = getopt(argc, argv, "w:h:d:s:v:t:p:")) != -1) {
+        switch (op) {
+            case 'w':
+                if (atoi(optarg) >= 10) {
+                    params->width = atoi(optarg);
+                }
+                break;
+            case 'h':
+                if (atoi(optarg) >= 10) {
+                    params->height= atoi(optarg);
+                }
+                break;
+            case 'd':
+                if (atoi(optarg) > 0) {
+                    params->delay = atoi(optarg);
+                }
+                break;
+            case 's':
+                if (atoi(optarg) > 0) {
+                    params->seed = atoi(optarg);
+                }
+                break;
+            case 'v':
+                params->view = optarg;
+                break;
+            case 't':
+                if (atoi(optarg) > 0) {
+                    params->timeout = atoi(optarg);
+                }
+                break;
+            case 'p': {
+                int idx = optind - 1;
+                params->amount_players = 0;
+                while (argv[idx] != NULL && argv[idx][0] != '-') {
+                    if (params->amount_players >= MAX_NUM_PLAYERS) {
+                        fprintf(stderr, "Error: At most 9 players can be specified using -p");
+                        exit(EXIT_FAILURE);
+                    }
+                    params->players[params->amount_players++] = argv[idx++];
+                }
+                break;
             }
+            default:
+                exit(EXIT_FAILURE);
         }
     }
+    printf("End of options\n");
+    if (params->players[0] == NULL) {
+        perror("Error: At least one player must be specified using -p.");
+        exit(EXIT_FAILURE);
+    }
 }
 
-/* 
- * Chequea los parametros, si no son validos los setea a los valores por defecto.
- * @param num_params: array donde se guardan los parametros
- * @param num_params[0]: ancho del tablero
- * @param num_params[1]: alto del tablero
- * @param num_params[2]: delay entre movimientos
- * @param num_params[3]: seed para el random
- * @param num_params[4]: timeout para el juego
- * @param view: vista del juego
- * @param players: array de jugadores
- * @return: EXIT_FAILURE si no hay jugadores, EXIT_SUCCESS si todo ok
- * 
-*/
-int check_params(int * num_params, char ** view, char * players[MAX_NUM_PLAYERS]) {
-    if (num_params[0] <= DEF_WIDTH) {
-        num_params[0] = DEF_WIDTH;
-    }
-    if (num_params[1] <= DEF_HEIGHT) {
-        num_params[1] = DEF_HEIGHT;
-    }
-    if (num_params[2] <= 0) {
-        num_params[2] = DEF_DELAY;
-    }
-    if (num_params[3] <= 0) {
-        num_params[3] = time(NULL);
-    }
-    if (num_params[4] <= 0) {
-        num_params[4] = DEF_TIMEOUT;
-    }
-    if (players[0] == NULL) {
-        return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
-}
-
-/* 
- * Llena el tablero con valores aleatorios entre 1 y 9.
- * @param width: ancho del tablero
- * @param height: alto del tablero
- * @param board: puntero al tablero
- * 
-*/
 void fill_board(int width, int height, int * board) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -124,17 +105,17 @@ void fill_board(int width, int height, int * board) {
     }
 }
 
-void print_inicial_state(game_status * game_state, int delay, int timeout, int seed, char * view) {
+void print_inicial_state(parameters params) {
     printf("\033[H\033[J");
-    printf("width: %d\n", game_state->width);
-    printf("height: %d\n", game_state->height);
-    printf("delay: %d\n", delay);
-    printf("timeout: %d\n", timeout);
-    printf("seed: %d\n", seed);
-    printf("view: %s\n", view == NULL ? "-" : view);
-    printf("num_players: %d\n", game_state->amount_players);
-    for (int i = 0; i < game_state->amount_players; i++) {
-        printf("  %s\n", game_state->players[i].name_player);
+    printf("width: %zu\n", params.width);
+    printf("height: %zu\n", params.height);
+    printf("delay: %zu\n", params.delay);
+    printf("timeout: %zu\n", params.timeout);
+    printf("seed: %zu\n", params.seed);
+    printf("view: %s\n", params.view == NULL ? "-" : params.view);
+    printf("num_players: %zu\n", params.amount_players);
+    for (int i = 0; i < params.amount_players; i++) {
+        printf("  %s\n", params.players[i]);
     }
 }
 
@@ -213,36 +194,32 @@ int set_players_processes(game_status * game_state, int fd[][2]) {
 
 int main(int argc, char const *argv[]) {
     //params
-    int num_params[5] = {0};
-    char * view = NULL;
-    char * players[MAX_NUM_PLAYERS] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    parameters params = {
+        .width = DEF_WIDTH,
+        .height = DEF_HEIGHT,
+        .delay = DEF_DELAY,
+        .timeout = DEF_TIMEOUT,
+        .seed = time(NULL),
+        .view = NULL,
+        .players = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+        .amount_players = 0
+    };
 
-    set_params(argc, argv, num_params, &view, players);
+    set_params(argc, (char * const *) argv, &params);
 
-    if (check_params(num_params, &view, players) == EXIT_FAILURE) {
-        fprintf(stderr, "Error: At least one player must be specified using -p.\n");
-        exit(EXIT_FAILURE);
-    }
+    print_inicial_state(params);
 
     //SHM
-    game_status * game_state = (game_status *) create_shmem("/game_state", sizeof(game_status) + (sizeof(int) * (num_params[1] * num_params[0])), 0644);
+    game_status * game_state = (game_status *) create_shmem("/game_state", sizeof(game_status) + (sizeof(int) * (params.width * params.width)), 0644);
     semaphores_status * game_sync = (semaphores_status *) create_shmem("/game_sync", sizeof(semaphores_status), 0666);
 
-    game_state->width = num_params[0];
-    game_state->height = num_params[1];
-    int delay = num_params[2];
-    int timeout = num_params[4];
-    srand(num_params[3]);
-    game_state->cant_end = false;
+    game_state->width = params.width;
+    game_state->height = params.height;
+    srand(params.seed);
+    game_state->cant_end = false;   
+    game_state->amount_players = params.amount_players;
 
-    game_state->amount_players = 0;
-    while (players[game_state->amount_players] != NULL) {
-        game_state->amount_players++;
-    }
-
-    set_initial_players_state(game_state, players);
-
-    print_inicial_state(game_state, delay, timeout, num_params[3], view);
+    set_initial_players_state(game_state, params.players);
 
     fill_board(game_state->width, game_state->height, game_state->board);
 
@@ -269,7 +246,7 @@ int main(int argc, char const *argv[]) {
         }
     }
 
-    struct timeval tv = {.tv_sec = timeout, .tv_usec = 0};
+    struct timeval tv = {.tv_sec = params.timeout, .tv_usec = 0};
 
 
     // loop principal
