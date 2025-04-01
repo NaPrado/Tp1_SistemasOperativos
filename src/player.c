@@ -3,7 +3,6 @@
 #include "../include/random.h"
 #include <stdio.h>
 #include <unistd.h>
-
 #include <fcntl.h>
 #include <time.h>
 
@@ -23,6 +22,34 @@ int can_player_move(int width, int height, int board[][width], int x, int y){
     return ret;
     
 }
+static int directions[3][3]={
+    {7,0,1},
+    {6,8,2},
+    {5,4,3}
+};
+
+int get_next_move(game_status * game_state, int player_number){
+    int x=game_state->players[player_number].x;
+    int y=game_state->players[player_number].y;
+    int last_points=-10;
+    int last_i=0;
+    int last_j=0;
+    int points;
+    for (int i = y-1 ; i < y+2 ; i++){
+        for (int j = x-1 ; j < x+2 ; j++){
+            if ((x!=j || y!=i) && j<game_state->width && i<game_state->height && j>=0 && i>=0){
+                points=game_state->board[j+i*game_state->width];
+                if ((points>=0||points==-10) && last_points<points){
+                    last_points=points;
+                    last_i=i;
+                    last_j=j;
+                }
+            }
+        }
+    }
+    return directions[last_i-y+1][last_j-x+1];
+}
+
 
 int main(int argc, char const *argv[]){
 
@@ -64,41 +91,31 @@ int main(int argc, char const *argv[]){
         }
         post(readers_count_mutex);
 
-        consultar_estado(...);
+        GET_BOARD(...);
 
         wait(readers_count_mutex);
 
     }
     */
+    int next_dir;
     while (!game_state->players[player_number].cant_move) {
-
         // seccion de entrada
         sem_wait(master_mutex);
         sem_post(master_mutex);
 
         sem_wait(player_read_count_mutex); // espero a modificar variable
-        game_sync->player_reading_status++;
-        if (game_sync->player_reading_status == 1) {
-            sem_wait(game_state_mutex); // espero a que writer libere
-        }
-
-        sem_post(master_mutex); // dejo al siguiente en la cola
+        if (game_sync->player_reading_status++ == 0) sem_wait(game_state_mutex); // espero a que writer libere
         sem_post(player_read_count_mutex); // dejo modificar variable
 
         // seccion critica de lectura
-
+        next_dir=get_next_move(game_state,player_number);
 
         // seccion de salida
         sem_wait(player_read_count_mutex); // espero a modificar variable
-        game_sync->player_reading_status--;
-        if (game_sync->player_reading_status == 0) {
-            sem_post(game_state_mutex); // dejo al writer
-        }
+        if (game_sync->player_reading_status-- == 1) sem_post(game_state_mutex); // dejo al writer
         sem_post(player_read_count_mutex); // dejo modificar variable
-        
-        usleep(1);
-        putchar(randInt(0,7));
-        
+        putchar(next_dir);
+        //usleep(500);
     }
 
     return 0;
