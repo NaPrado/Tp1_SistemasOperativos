@@ -195,6 +195,55 @@ int set_players_processes(game_status * game_state, int fd[][2]) {
     return 0;
 }
 
+int get_max_fd(int fd[][2], size_t amount_players) {
+    int max_fd = -1;
+    for (int i = 0; i < amount_players; i++) {
+        if (fd[i][0] > max_fd) {
+            max_fd = fd[i][0];
+        }
+    }
+    return max_fd;
+}
+
+int get_player_move(int fd[][2], size_t amount_players, int * player_number, int * move) {
+    int max_fd = get_max_fd(fd, amount_players);
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    for (int i = 0; i < amount_players; i++) {
+        if (fd[i][0] != -1) {
+            FD_SET(fd[i][0], &read_fds);
+        }
+    }
+    struct timeval tv = {.tv_sec = 10, .tv_usec = 0};
+    int act = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
+    if (act < 0) {
+        perror("Error: select failed");
+        exit(EXIT_FAILURE);
+    }
+    if (act == 0) {
+        printf("Timeout reached. Ending game.\n");
+        return 0;
+    }
+    for (int i = 0; i < amount_players; i++) {
+        if (FD_ISSET(fd[i][0], &read_fds)) {
+            char buffer;
+            int bytes_read = read(fd[i][0], &buffer, 1);
+            if (bytes_read == -1) {
+                perror("Error: read failed");
+                exit(EXIT_FAILURE);
+            }
+            if (bytes_read == 0) {
+                printf("Player %d has closed the pipe.\n", i);
+                close(fd[i][0]);
+                fd[i][0] = -1; // Mark as closed
+            } else {
+                printf("Player %d: %c\n", i, buffer);
+            }
+        }
+    }
+    return 1;
+}
+
 int main(int argc, char const *argv[]) {
     //params
     parameters params = {
@@ -240,49 +289,16 @@ int main(int argc, char const *argv[]) {
         perror("Error: set_players_processes failed");
         exit(EXIT_FAILURE);
     }
-
-    fd_set read_fds;
-    int max_fd = 0;
-    for (int i = 0; i < game_state->amount_players; i++) {
-        if (fd[i][0] > max_fd) {
-            max_fd = fd[i][0];
-        }
-    }
-
-    struct timeval tv = {.tv_sec = params.timeout, .tv_usec = 0};
-
-
     // loop principal
     while (!game_state->cant_end) {
-        FD_ZERO(&read_fds);
-        for (int i = 0; i < game_state->amount_players; i++) {
-            FD_SET(fd[i][0], &read_fds);
-        }
 
-        int act = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
-
-        if (act < 0) {
-            perror("Error: select failed");
-            exit(EXIT_FAILURE);
-        }
-        if (act == 0) {
-            printf("Timeout reached. Ending game.\n");
+        int player_number = -1, move = -1;
+        if (get_player_move(fd, game_state->amount_players, &player_number, &move) == 0) {
             game_state->cant_end = true;
             break;
-        }
-        for (int i = 0; i < game_state->amount_players; i++) {
-            if (FD_ISSET(fd[i][0], &read_fds)) {
-                char buffer[100];
-                int bytes_read = read(fd[i][0], buffer, sizeof(buffer) - 1);
-                if (bytes_read > 0) {
-                    buffer[bytes_read] = '\0';
-                    printf("Player %d: %s\n", i, buffer);
-                } else {
-                    perror("Error: read failed");
-                    exit(EXIT_FAILURE);
-                }
-            }
-        }
+        } 
+        // leer jugada y calcular siguiente estado de juego
+        
     }
     
 
