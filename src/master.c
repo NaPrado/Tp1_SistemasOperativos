@@ -27,6 +27,11 @@ enum params_default {
 
 #define MAX_NUM_PLAYERS 9
 
+#define POS_X(game_state, player) ((game_state)->players[(player)].x)
+#define POS_Y(game_state, player) ((game_state)->players[(player)].y)
+#define BOARD_AT(game_state, x, y) ((game_state)->board[(y) * game_state->width + (x)])
+#define BOARD_AT_PLAYER(game_state, player) (BOARD_AT(game_state, POS_X(game_state, player), POS_Y(game_state, player)))
+
 typedef struct {
     size_t width; // ancho del tablero
     size_t height; // alto del tablero
@@ -36,15 +41,46 @@ typedef struct {
     char * view;
     char * players[MAX_NUM_PLAYERS];
     size_t amount_players;
-} parameters;
+} Tparameters;
+
+typedef struct {
+    int player;
+    int move;
+} Tplayer_move;
+
+typedef struct {
+    int x;
+    int y;
+} T2D_move;
+
+T2D_move posible_moves[8] = { 
+    {0, -1},
+    {1, -1}, 
+    {1, 0}, 
+    {1, 1}, 
+    {0, 1}, 
+    {-1, 1}, 
+    {-1, 0}, 
+    {-1, -1}, 
+};
+
+// variables para el control de la cola de round robin
+// int start = 0;
+// int end = 0;
+// int round_robin_queue[2 * MAX_NUM_PLAYERS];
 
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-void set_params(int argc, char * const argv[], parameters * params) {
+int valid_possition(game_status * game_state, int x, int y) {
+    return (x >= 0 && x < game_state->width && y >= 0 && y < game_state->height && 
+            BOARD_AT(game_state, x, y) > 0);
+}
+
+void set_params(int argc, char * const argv[], Tparameters * params) {
     int op;
     if (argc < 2) {
-        perror("Error: At least one player must be specified using -p.");
+        fprintf(stderr, "Error: At least one player must be specified using -p.\n");
         exit(EXIT_FAILURE);
     }
     while ((op = getopt(argc, argv, "w:h:d:s:v:t:p:")) != -1) {
@@ -95,7 +131,7 @@ void set_params(int argc, char * const argv[], parameters * params) {
     }
     printf("End of options\n");
     if (params->players[0] == NULL) {
-        perror("Error: At least one player must be specified using -p.");
+        fprintf(stderr, "Error: At least one player must be specified using -p.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -108,7 +144,7 @@ void fill_board(int width, int height, int * board) {
     }
 }
 
-void print_inicial_state(parameters params) {
+void print_inicial_state(Tparameters params) {
     printf("\033[H\033[J");
     printf("width: %zu\n", params.width);
     printf("height: %zu\n", params.height);
@@ -123,15 +159,16 @@ void print_inicial_state(parameters params) {
 }
 
 void set_initial_players_state(game_status * game_state, char * players[MAX_NUM_PLAYERS]) {
-    for (int j = 0; j < game_state->amount_players; j++) {
-        strcpy(game_state->players[j].name_player, players[j]);
-        game_state->players[j].points = 0;
-        game_state->players[j].amount_invalid_movements = 0;
-        game_state->players[j].amount_valid_movements = 0;
-        game_state->players[j].x = rand() % game_state->width;
-        game_state->players[j].y = rand() % game_state->height;
-        game_state->players[j].pid = 0;
-        game_state->players[j].cant_move = true;
+    for (int i = 0; i < game_state->amount_players; i++) {
+        strcpy(game_state->players[i].name_player, players[i]);
+        game_state->players[i].points = 0;
+        game_state->players[i].amount_invalid_movements = 0;
+        game_state->players[i].amount_valid_movements = 0;
+        game_state->players[i].x = rand() % game_state->width;
+        game_state->players[i].y = rand() % game_state->height;
+        game_state->players[i].pid = 0;
+        game_state->players[i].cant_move = 0;
+        BOARD_AT_PLAYER(game_state, i) = i * (-1);
     }
 }
 
@@ -157,9 +194,9 @@ int set_players_processes(game_status * game_state, int fd[][2]) {
     int pid = 0;
     for (int i = 0; i < game_state->amount_players; i++) {
         if ((pid = fork()) < 0) {
+            perror("Error: player fork failed");
             exit(EXIT_FAILURE);
         } else if (pid == 0) { // hijo
-            printf("Entering player %d\n", i);
             if (close(fd[i][0]) == -1) {
                 exit(EXIT_FAILURE);
             }
@@ -185,12 +222,39 @@ int set_players_processes(game_status * game_state, int fd[][2]) {
             execve(game_state->players[i].name_player, new_argv, NULL);
             exit(EXIT_FAILURE);
         } else { // padre
-            printf("Created player %d with pid %d\n", i, pid);
             if (close(fd[i][1]) == -1) {
                 exit(EXIT_FAILURE);
             }
             game_state->players[i].pid = pid;
         }
+    }
+    return 0;
+}
+
+int set_view_process(const char * view_name, size_t width, size_t height) {
+    if (view_name == NULL) {
+        return -1;
+    }
+    int pid = fork();
+    if (pid < 0) {
+        perror("Error: view fork failed");
+        return -1;
+    }
+    if (pid == 0) { // hijo
+    char * new_argv[] = {NULL, NULL, NULL, NULL};
+    char arg0[20] = {0};
+    snprintf(arg0, 19, "%s", view_name);
+    char arg1[10] = {0};
+    snprintf(arg1, 9, "%zu", width);
+    char arg2[10] = {0};
+    snprintf(arg2, 9, "%zu", height);
+    new_argv[0] = arg0;
+    new_argv[1] = arg1;
+    new_argv[2] = arg2;
+    new_argv[3] = NULL;
+
+    execve(view_name, new_argv, NULL);
+    return -1;
     }
     return 0;
 }
@@ -205,7 +269,7 @@ int get_max_fd(int fd[][2], size_t amount_players) {
     return max_fd;
 }
 
-int get_player_move(int fd[][2], size_t amount_players, int * player_number, int * move) {
+int get_player_move(int fd[][2], size_t amount_players, Tplayer_move * move) {
     int max_fd = get_max_fd(fd, amount_players);
     fd_set read_fds;
     FD_ZERO(&read_fds);
@@ -214,7 +278,7 @@ int get_player_move(int fd[][2], size_t amount_players, int * player_number, int
             FD_SET(fd[i][0], &read_fds);
         }
     }
-    struct timeval tv = {.tv_sec = 10, .tv_usec = 0};
+    struct timeval tv = {.tv_sec = 5, .tv_usec = 0};
     int act = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
     if (act < 0) {
         perror("Error: select failed");
@@ -226,6 +290,8 @@ int get_player_move(int fd[][2], size_t amount_players, int * player_number, int
     }
     for (int i = 0; i < amount_players; i++) {
         if (FD_ISSET(fd[i][0], &read_fds)) {
+            // round_robin_queue[end] = i;
+            // end = (end + 1) % MAX_NUM_PLAYERS;
             char buffer;
             int bytes_read = read(fd[i][0], &buffer, 1);
             if (bytes_read == -1) {
@@ -233,20 +299,69 @@ int get_player_move(int fd[][2], size_t amount_players, int * player_number, int
                 exit(EXIT_FAILURE);
             }
             if (bytes_read == 0) {
-                printf("Player %d has closed the pipe.\n", i);
+                // Cerramos el pipe
+                printf("Player %d no read.\n", i);
+                move->player = -1;
+                move->move = -1;
                 close(fd[i][0]);
-                fd[i][0] = -1; // Mark as closed
+                fd[i][0] = -1; // Marcar el pipe como cerrado
             } else {
-                printf("Player %d: %c\n", i, buffer);
+                printf("Player %d read %c\n", i, buffer + '0');
+                move->player = i;
+                move->move = buffer;
+                return 1;
             }
         }
     }
+    // if (round_robin_queue[start] == -1) {
+    //     return 0;
+    // }
+    // start = (start + 1) % MAX_NUM_PLAYERS;
     return 1;
 }
 
+int has_next_move(game_status * game_state, int player) {
+    int x = POS_X(game_state, player);
+    int y = POS_Y(game_state, player);
+    for (int i = y - 1; i <= y + 1; i++) {
+        for (int j = x - 1; j <= x + 1; j++) {
+            if (!(x == j && y == i) && valid_possition(game_state, j, i)) {
+                if (BOARD_AT(game_state, j, i) > 0) {
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+void compute_next_move(game_status * game_state, Tplayer_move move) {
+    T2D_move next_move = posible_moves[move.move % 8];
+    if (!valid_possition(game_state, 
+        POS_X(game_state, move.player) + next_move.x, 
+        POS_Y(game_state, move.player) + next_move.y)) {
+        game_state->players[move.player].amount_invalid_movements++;
+    } else {
+        game_state->players[move.player].amount_valid_movements++;
+        game_state->players[move.player].x += next_move.x;
+        game_state->players[move.player].y += next_move.y;
+        game_state->players[move.player].points += BOARD_AT_PLAYER(game_state, move.player);
+        BOARD_AT_PLAYER(game_state, move.player) = move.player * (-1);
+    }
+}
+
+void verify_players_cant_move(game_status * game_state) {
+    for (int i = 0; i < game_state->amount_players; i++) {
+        game_state->players[i].cant_move = !has_next_move(game_state, i);
+    }
+}
+
 int main(int argc, char const *argv[]) {
+
+    printf("\033[H\033[J\n");
+
     //params
-    parameters params = {
+    Tparameters params = {
         .width = DEF_WIDTH,
         .height = DEF_HEIGHT,
         .delay = DEF_DELAY,
@@ -256,6 +371,7 @@ int main(int argc, char const *argv[]) {
         .players = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
         .amount_players = 0
     };
+
 
     set_params(argc, (char * const *) argv, &params);
 
@@ -271,9 +387,9 @@ int main(int argc, char const *argv[]) {
     game_state->cant_end = false;   
     game_state->amount_players = params.amount_players;
 
-    set_initial_players_state(game_state, params.players);
-
     fill_board(game_state->width, game_state->height, game_state->board);
+
+    set_initial_players_state(game_state, params.players);
 
     set_init_semaphores(game_sync);
 
@@ -289,19 +405,48 @@ int main(int argc, char const *argv[]) {
         perror("Error: set_players_processes failed");
         exit(EXIT_FAILURE);
     }
+
+    if (set_view_process(params.view, game_state->width, game_state->height) == EXIT_FAILURE) {
+        perror("Error: set_view_process failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // sleep(5);
+
     // loop principal
     while (!game_state->cant_end) {
 
-        int player_number = -1, move = -1;
-        if (get_player_move(fd, game_state->amount_players, &player_number, &move) == 0) {
-            game_state->cant_end = true;
-            break;
-        } 
-        // leer jugada y calcular siguiente estado de juego
+        // print view
+
+        // getchar();
+        sem_post(&game_sync->show_needed);
+        sem_wait(&game_sync->show_done);
+
+        // leer movimiento
+        Tplayer_move move = {.player = -1, .move = -1};
+        while (move.move == -1 || move.player == -1) {
+            if (get_player_move(fd, game_state->amount_players, &move) == 0) {
+                game_state->cant_end = true;
+                break;
+            }
+        }
+
+        sem_wait(&game_sync->master_mutex);
+        sem_wait(&game_sync->game_state_mutex);
+        sem_post(&game_sync->master_mutex);
+
+
+        // zona critica (writer)
+        // calcular siguiente estado de juego
+        compute_next_move(game_state, move);
+        verify_players_cant_move(game_state);
         
+
+        sem_post(&game_sync->game_state_mutex);
+        // printf("Player %d moved to (%d)\n", move.player, move.move);
     }
     
-
+    
     
     for (int i = 0; i < game_state->amount_players; i++) {
         wait(NULL);
