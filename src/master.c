@@ -64,10 +64,6 @@ T2D_move posible_moves[8] = {
     {-1, -1}, 
 };
 
-// variables para el control de la cola de round robin
-// int start = 0;
-// int end = 0;
-// int round_robin_queue[2 * MAX_NUM_PLAYERS];
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -269,15 +265,47 @@ int get_max_fd(int fd[][2], size_t amount_players) {
     return max_fd;
 }
 
-int get_player_move(int fd[][2], size_t amount_players, Tplayer_move * move) {
+typedef struct {
+    int queue[2 * MAX_NUM_PLAYERS];
+    int start;
+    int end;
+} RoundRobinQueue;
+
+void rr_init(RoundRobinQueue *rrq) {
+    rrq->start = 0;
+    rrq->end = 0;
+    for (int i = 0; i < 2 * MAX_NUM_PLAYERS; i++) {
+        rrq->queue[i] = -1;
+    }
+}
+
+void rr_enqueue(RoundRobinQueue *rrq, int player) {
+    rrq->queue[rrq->end] = player;
+    rrq->end = (rrq->end + 1) % (2 * MAX_NUM_PLAYERS);
+}
+
+int rr_dequeue(RoundRobinQueue *rrq) {
+    if (rrq->queue[rrq->start] == -1 || rrq->start == rrq->end) {
+        return -1; // Cola vacía
+    }
+    int player = rrq->queue[rrq->start];
+    rrq->queue[rrq->start] = -1;
+    rrq->start = (rrq->start + 1) % (2 * MAX_NUM_PLAYERS);
+    return player;
+}
+
+
+int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, RoundRobinQueue *rrq) {
     int max_fd = get_max_fd(fd, amount_players);
     fd_set read_fds;
     FD_ZERO(&read_fds);
+
     for (int i = 0; i < amount_players; i++) {
         if (fd[i][0] != -1) {
             FD_SET(fd[i][0], &read_fds);
         }
     }
+
     struct timeval tv = {.tv_sec = 5, .tv_usec = 0};
     int act = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
     if (act < 0) {
@@ -288,10 +316,11 @@ int get_player_move(int fd[][2], size_t amount_players, Tplayer_move * move) {
         printf("Timeout reached. Ending game.\n");
         return 0;
     }
+
     for (int i = 0; i < amount_players; i++) {
-        if (FD_ISSET(fd[i][0], &read_fds)) {
-            // round_robin_queue[end] = i;
-            // end = (end + 1) % MAX_NUM_PLAYERS;
+        if (fd[i][0] != -1 && FD_ISSET(fd[i][0], &read_fds)) {
+            rr_enqueue(rrq, i);
+
             char buffer;
             int bytes_read = read(fd[i][0], &buffer, 1);
             if (bytes_read == -1) {
@@ -299,24 +328,29 @@ int get_player_move(int fd[][2], size_t amount_players, Tplayer_move * move) {
                 exit(EXIT_FAILURE);
             }
             if (bytes_read == 0) {
-                // Cerramos el pipe
-                printf("Player %d no read.\n", i);
+                // Pipe cerrado
+                printf("Player %d disconnected.\n", i);
                 move->player = -1;
                 move->move = -1;
                 close(fd[i][0]);
-                fd[i][0] = -1; // Marcar el pipe como cerrado
+                fd[i][0] = -1;
             } else {
-                printf("Player %d read %c\n", i, buffer + '0');
+                printf("Player %d read %c\n", i, buffer+'0');
                 move->player = i;
                 move->move = buffer;
                 return 1;
             }
         }
     }
-    // if (round_robin_queue[start] == -1) {
-    //     return 0;
-    // }
-    // start = (start + 1) % MAX_NUM_PLAYERS;
+
+    // Si no hubo lectura válida, intentar avanzar en la cola
+    int next_player = rr_dequeue(rrq);
+    if (next_player == -1) {
+        return 0;
+    }
+
+    move->player = next_player;
+    move->move = -1; // O lo que tenga sentido en este contexto
     return 1;
 }
 
@@ -424,8 +458,10 @@ int main(int argc, char const *argv[]) {
 
         // leer movimiento
         Tplayer_move move = {.player = -1, .move = -1};
+        RoundRobinQueue rrq;
+        rr_init(&rrq);
         while (move.move == -1 || move.player == -1) {
-            if (get_player_move(fd, game_state->amount_players, &move) == 0) {
+            if (get_player_move(fd, game_state->amount_players, &move,&rrq) == 0) {
                 game_state->cant_end = true;
                 break;
             }
