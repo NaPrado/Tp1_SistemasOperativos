@@ -66,3 +66,8 @@ semaphores_status * get_game_sync() {
 	close(fd);
 	return (semaphores_status *) p;
 }
+
+void free_shmem(char* name_shm,void * ptr,size_t size){
+	shm_unlink(name_shm);
+	munmap(ptr, size);
+}

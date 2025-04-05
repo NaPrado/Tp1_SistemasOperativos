@@ -487,6 +487,7 @@ int main(int argc, char const *argv[]) {
     for (int i = 0; i < game_state->amount_players; i++) {
         wait(NULL);
     }
-    
+    free_shmem("/game_state",game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.width)));
+    free_shmem("/game_sync",game_sync,sizeof(semaphores_status));
     return 0;
 }
