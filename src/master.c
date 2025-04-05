@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/select.h>
+#include <time.h>
 
 #include "shm.h"
 #include "random.h"
@@ -446,7 +447,8 @@ int main(int argc, char const *argv[]) {
     }
 
     // sleep(5);
-
+    struct timespec ts = {0, params.delay*1000000}; // 200ms
+    
     // loop principal
     while (!game_state->cant_end) {
 
@@ -455,6 +457,8 @@ int main(int argc, char const *argv[]) {
         // getchar();
         sem_post(&game_sync->show_needed);
         sem_wait(&game_sync->show_done);
+
+        nanosleep(&ts, NULL);
 
         // leer movimiento
         Tplayer_move move = {.player = -1, .move = -1};
