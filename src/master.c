@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <sys/select.h>
 #include <time.h>
+#include <libgen.h>
 
 #include "shm.h"
 #include "random.h"
@@ -157,7 +158,9 @@ void print_inicial_state(Tparameters params) {
 
 void set_initial_players_state(game_status * game_state, char * players[MAX_NUM_PLAYERS]) {
     for (int i = 0; i < game_state->amount_players; i++) {
-        strcpy(game_state->players[i].name_player, players[i]);
+        char name[150];
+        strcpy(name, players[i]);
+        strcpy(game_state->players[i].name_player,basename(name));
         game_state->players[i].points = 0;
         game_state->players[i].amount_invalid_movements = 0;
         game_state->players[i].amount_valid_movements = 0;
@@ -187,9 +190,9 @@ int set_pipes(int fd[MAX_NUM_PLAYERS][2], int num_players) {
     return EXIT_SUCCESS;
 }
 
-int set_players_processes(game_status * game_state, int fd[][2]) {
+int set_players_processes(Tparameters* params,game_status* game_state, int fd[][2]) {
     int pid = 0;
-    for (int i = 0; i < game_state->amount_players; i++) {
+    for (int i = 0; i < params->amount_players; i++) {
         if ((pid = fork()) < 0) {
             perror("Error: player fork failed");
             exit(EXIT_FAILURE);
@@ -206,17 +209,17 @@ int set_players_processes(game_status * game_state, int fd[][2]) {
 
             char * new_argv[] = {NULL, NULL, NULL, NULL};
             char arg0[20] = {0};
-            snprintf(arg0, 19, "%s", game_state->players[i].name_player);
+            snprintf(arg0, 19, "%s", params->players[i]);
             char arg1[10] = {0};
-            snprintf(arg1, 9, "%d", game_state->width);
+            snprintf(arg1, 9, "%ld", params->width);
             char arg2[10] = {0};
-            snprintf(arg2, 9, "%d", game_state->height);
+            snprintf(arg2, 9, "%ld", params->height);
             new_argv[0] = arg0;
             new_argv[1] = arg1;
             new_argv[2] = arg2;
             new_argv[3] = NULL;
 
-            execve(game_state->players[i].name_player, new_argv, NULL);
+            execve(params->players[i], new_argv, NULL);
             exit(EXIT_FAILURE);
         } else { // padre
             if (close(fd[i][1]) == -1) {
@@ -436,7 +439,7 @@ int main(int argc, char const *argv[]) {
     }
 
     // Crear procesos de jugadores
-    if (set_players_processes(game_state, fd) == EXIT_FAILURE) {
+    if (set_players_processes(&params, game_state, fd) == EXIT_FAILURE) {
         perror("Error: set_players_processes failed");
         exit(EXIT_FAILURE);
     }
