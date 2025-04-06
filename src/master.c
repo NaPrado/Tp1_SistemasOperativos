@@ -409,23 +409,21 @@ int main(int argc, char const *argv[]) {
         perror("Error: set_view_process failed");
         exit(EXIT_FAILURE);
     }
-    struct timespec ts = {0, 200*10000000};
     
     int player=0;
     // loop principal
     while (!game_state->cant_end) {
 
         // print view
+        usleep(params.delay* 1000);
         sem_post(&game_sync->show_needed);
         sem_wait(&game_sync->show_done);
-        sleep(1);
-        nanosleep(&ts, NULL);
 
         // leer movimiento
         Tplayer_move move = {.player = -1, .move = -1};
         while (move.move == -1 || move.player == -1) {
             if (get_player_move(fd, game_state->amount_players, &move,&player) == 0) {
-                player=(move.player+1)%game_state->amount_players;
+                game_state->cant_end=true;
                 break;
             }
         }
