@@ -269,37 +269,7 @@ int get_max_fd(int fd[][2], size_t amount_players) {
     return max_fd;
 }
 
-typedef struct {
-    int queue[2 * MAX_NUM_PLAYERS];
-    int start;
-    int end;
-} RoundRobinQueue;
-
-void round_robin_init(RoundRobinQueue *round_robin_queue) {
-    round_robin_queue->start = 0;
-    round_robin_queue->end = 0;
-    for (int i = 0; i < 2 * MAX_NUM_PLAYERS; i++) {
-        round_robin_queue->queue[i] = -1;
-    }
-}
-
-void round_robin_enqueue(RoundRobinQueue *round_robin_queue, int player) {
-    round_robin_queue->queue[round_robin_queue->end] = player;
-    round_robin_queue->end = (round_robin_queue->end + 1) % (2 * MAX_NUM_PLAYERS);
-}
-
-int round_robin_dequeue(RoundRobinQueue *round_robin_queue) {
-    if (round_robin_queue->queue[round_robin_queue->start] == -1 || round_robin_queue->start == round_robin_queue->end) {
-        return -1; // Cola vacía
-    }
-    int player = round_robin_queue->queue[round_robin_queue->start];
-    round_robin_queue->queue[round_robin_queue->start] = -1;
-    round_robin_queue->start = (round_robin_queue->start + 1) % (2 * MAX_NUM_PLAYERS);
-    return player;
-}
-
-
-int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, RoundRobinQueue *round_robin_queue) {
+int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int* player_number) {
     int max_fd = get_max_fd(fd, amount_players);
     fd_set read_fds;
     FD_ZERO(&read_fds);
@@ -321,41 +291,32 @@ int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, Roun
         return 0;
     }
 
-    for (int i = 0; i < amount_players; i++) {
-        if (fd[i][0] != -1 && FD_ISSET(fd[i][0], &read_fds)) {
-            round_robin_enqueue(round_robin_queue, i);
-
+    for (; *player_number < amount_players; (*player_number)++,(*player_number)%=amount_players) {
+        if (fd[(*player_number)][0] != -1 && FD_ISSET(fd[(*player_number)][0], &read_fds)) {
             char buffer;
-            int bytes_read = read(fd[i][0], &buffer, 1);
+            int bytes_read = read(fd[(*player_number)][0], &buffer, 1);
             if (bytes_read == -1) {
                 perror("Error: read failed");
                 exit(EXIT_FAILURE);
             }
             if (bytes_read == 0) {
                 // Pipe cerrado
-                printf("Player %d disconnected.\n", i);
+                printf("Player %d disconnected.\n", (*player_number));
                 move->player = -1;
                 move->move = -1;
-                close(fd[i][0]);
-                fd[i][0] = -1;
+                close(fd[(*player_number)][0]);
+                fd[(*player_number)][0] = -1;
             } else {
-                printf("Player %d read %c\n", i, buffer+'0');
-                move->player = i;
+                printf("Player %d read %d\n", (*player_number), buffer);
+                move->player = (*player_number);
                 move->move = buffer;
+                (*player_number)++;
+                (*player_number)%=amount_players;
                 return 1;
             }
         }
     }
-
-    // Si no hubo lectura válida, intentar avanzar en la cola
-    int next_player = round_robin_dequeue(round_robin_queue);
-    if (next_player == -1) {
-        return 0;
-    }
-
-    move->player = next_player;
-    move->move = -1; // O lo que tenga sentido en este contexto
-    return 1;
+    return 0;
 }
 
 int has_next_move(game_status * game_state, int player) {
@@ -448,25 +409,23 @@ int main(int argc, char const *argv[]) {
         perror("Error: set_view_process failed");
         exit(EXIT_FAILURE);
     }
-    struct timespec ts = {0, params.delay*1000000};
+    struct timespec ts = {0, 200*10000000};
     
+    int player=0;
     // loop principal
     while (!game_state->cant_end) {
 
         // print view
-
-        // getchar();
         sem_post(&game_sync->show_needed);
         sem_wait(&game_sync->show_done);
+        sleep(1);
         nanosleep(&ts, NULL);
 
         // leer movimiento
         Tplayer_move move = {.player = -1, .move = -1};
-        RoundRobinQueue round_robin_queue;
-        round_robin_init(&round_robin_queue);
         while (move.move == -1 || move.player == -1) {
-            if (get_player_move(fd, game_state->amount_players, &move,&round_robin_queue) == 0) {
-                game_state->cant_end = true;
+            if (get_player_move(fd, game_state->amount_players, &move,&player) == 0) {
+                player=(move.player+1)%game_state->amount_players;
                 break;
             }
         }
