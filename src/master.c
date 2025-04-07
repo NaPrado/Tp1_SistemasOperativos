@@ -354,6 +354,10 @@ void verify_players_cant_move(game_status * game_state) {
         game_state->players[i].cant_move = !has_next_move(game_state, i);
     }
 }
+void free_game_state_and_sync_with_free(int exit_status,semaphores_status * sync_ptr,game_status * ptr,size_t size_game_state) {
+    free_game_state_and_sync(sync_ptr,ptr,size_game_state);
+    exit(exit_status);
+}
 
 int main(int argc, char const *argv[]) {
 
@@ -377,8 +381,8 @@ int main(int argc, char const *argv[]) {
     print_inicial_state(params);
 
     //SHM
-    game_status * game_state = (game_status *) create_shmem("/game_state", sizeof(game_status) + (sizeof(int) * (params.width * params.width)), 0644);
-    semaphores_status * game_sync = (semaphores_status *) create_shmem("/game_sync", sizeof(semaphores_status), 0666);
+    game_status * game_state = create_game_state(sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
+    semaphores_status * game_sync = create_game_sync();
 
     game_state->width = params.width;
     game_state->height = params.height;
@@ -396,18 +400,18 @@ int main(int argc, char const *argv[]) {
     int fd[game_state->amount_players][2];
     if (set_pipes(fd, game_state->amount_players) == EXIT_FAILURE) {
         perror("Error: pipe failed");
-        exit(EXIT_FAILURE);
+        free_game_state_and_sync_with_free(EXIT_FAILURE,game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
     }
 
     // Crear procesos de jugadores
     if (set_players_processes(&params, game_state, fd) == EXIT_FAILURE) {
         perror("Error: set_players_processes failed");
-        exit(EXIT_FAILURE);
+        free_game_state_and_sync_with_free(EXIT_FAILURE,game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
     }
 
     if (set_view_process(params.view, game_state->width, game_state->height) == EXIT_FAILURE) {
         perror("Error: set_view_process failed");
-        exit(EXIT_FAILURE);
+        free_game_state_and_sync_with_free(EXIT_FAILURE,game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
     }
     
     int player=0;
@@ -448,7 +452,6 @@ int main(int argc, char const *argv[]) {
     for (int i = 0; i < game_state->amount_players; i++) {
         wait(NULL);
     }
-    free_shmem("/game_state",game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.width)));
-    free_shmem("/game_sync",game_sync,sizeof(semaphores_status));
+    free_game_state_and_sync(game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
     return 0;
 }

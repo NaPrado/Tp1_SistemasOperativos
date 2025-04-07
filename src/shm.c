@@ -28,6 +28,12 @@ void * create_shmem(const char * name, size_t size, mode_t mode) {
 	close(fd);
 	return p;
 }
+game_status * create_game_state(size_t size) {
+	return (game_status *) create_shmem("/game_state", sizeof(game_status) + (sizeof(int) * size), 0644);
+}
+semaphores_status * create_game_sync() {
+	return (semaphores_status *) create_shmem("/game_sync", sizeof(semaphores_status), 0666);
+}
 
 game_status * get_game_state(size_t size) {
 	int fd;
@@ -66,8 +72,23 @@ semaphores_status * get_game_sync() {
 	close(fd);
 	return (semaphores_status *) p;
 }
-
-void free_shmem(char* name_shm,void * ptr,size_t size){
-	shm_unlink(name_shm);
+void munmap_game_state(game_status * ptr, size_t size) {
 	munmap(ptr, size);
+}
+void munmap_game_sync(semaphores_status * ptr) {
+	munmap((void*)ptr, sizeof(semaphores_status));
+}
+
+void free_game_sync(semaphores_status * ptr){
+	shm_unlink("/game_sync");
+	munmap_game_sync(ptr);
+}
+
+void free_game_state(game_status * ptr,size_t size){
+	shm_unlink("/game_state");
+	munmap_game_state(ptr, size);
+}
+void free_game_state_and_sync(semaphores_status * sync_ptr,game_status * ptr,size_t size_game_state){
+	free_game_sync(sync_ptr);
+	free_game_state(ptr, size_game_state);
 }

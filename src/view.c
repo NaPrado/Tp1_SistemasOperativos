@@ -134,7 +134,7 @@ int main(int argc, char const *argv[]) {
         print_stats(game_state);
         sem_post(show_done);
     }
-    free_shmem("/game_state", game_state, sizeof(game_status) + (sizeof(int) * (height * width)));
-    free_shmem("/game_sync", game_sync, sizeof(semaphores_status));
+    munmap_game_state(game_state, sizeof(game_status) + (sizeof(int) * (height * width)));
+    munmap_game_sync(game_sync);
     return 0;
 }
