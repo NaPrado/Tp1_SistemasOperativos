@@ -128,6 +128,7 @@ int main(int argc, char const *argv[]){
             write(1,&next_dir,1);
         }
     }
-
+    free_shmem("/game_state", game_state, sizeof(game_status) + (sizeof(int) * (height * width)));
+    free_shmem("/game_sync", game_sync, sizeof(semaphores_status));
     return 0;
 }
