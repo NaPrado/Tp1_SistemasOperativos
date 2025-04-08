@@ -18,7 +18,7 @@ typedef struct {
   unsigned short height; // Alto del tablero 
   unsigned int amount_players; // Cantidad de jugadores 
   player_status players[9]; // Lista de jugadores  
-  bool cant_end; // Indica si el juego no se ha terminado 
+  bool can_end; // Indica si el juego no se ha terminado 
   int board[]; // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1  
 } game_status;
 

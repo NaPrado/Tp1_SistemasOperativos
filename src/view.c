@@ -92,7 +92,7 @@ void clear_screen() {
     write(STDOUT_FILENO, clear, strlen(clear));
 }
 static void print_player_stats(player_status* player_state){
-    printf("name:%s\tpoints:%d\tvalidM:%d\tinvalidM:%d\tcoords:(%d,%d)%s\n",player_state->name_player,player_state->points,player_state->amount_valid_movements,player_state->amount_invalid_movements,player_state->x,player_state->y,colores_reset);
+    printf("name:%s\tpoints:%d\tvalidM:%d\tinvalidM:%d\tcoords:(%d,%d)%s\n", player_state->name_player, player_state->points, player_state->amount_valid_movements, player_state->amount_invalid_movements, player_state->x, player_state->y, colores_reset);
 }
 
 
@@ -126,15 +126,20 @@ int main(int argc, char const *argv[]) {
     sem_t * show_done= &(game_sync->show_done);
     sem_t * show_needed= &(game_sync->show_needed);
 
-    while (!game_state->cant_end) {
+    while (!game_state->can_end) {
         sem_wait(show_needed);
+        if (game_state->can_end) {
+            break;
+        }
         clear_screen();
         print_view(game_state->board, height, width, game_state);
         printf("%s",check_if_invalid(game_state->players, game_state->amount_players)?"\a":"");
         print_stats(game_state);
         sem_post(show_done);
     }
+
     munmap_game_state(game_state, sizeof(game_status) + (sizeof(int) * (height * width)));
     munmap_game_sync(game_sync);
+
     return 0;
 }
