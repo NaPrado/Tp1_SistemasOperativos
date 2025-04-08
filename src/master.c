@@ -33,6 +33,7 @@ enum params_default {
 #define POS_Y(game_state, player) ((game_state)->players[(player)].y)
 #define BOARD_AT(game_state, x, y) ((game_state)->board[(y) * game_state->width + (x)])
 #define BOARD_AT_PLAYER(game_state, player) (BOARD_AT(game_state, POS_X(game_state, player), POS_Y(game_state, player)))
+#define GAME_SIZE(game_state, width, height) sizeof(*game_state) + (sizeof(int) * (width * height))
 
 typedef struct {
     size_t width; // ancho del tablero
@@ -306,6 +307,7 @@ int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int*
                 move->move = -1;
                 close(fd[(*player_number)][0]);
                 fd[(*player_number)][0] = -1;
+                return -1;
             } else {
                 printf("Player %d read %d\n", (*player_number), buffer);
                 move->player = (*player_number);
@@ -354,9 +356,12 @@ void verify_players_cant_move(game_status * game_state) {
         game_state->players[i].cant_move = !has_next_move(game_state, i);
     }
 }
-void free_game_state_and_sync_with_free(int exit_status,semaphores_status * sync_ptr,game_status * ptr,size_t size_game_state) {
-    free_game_state_and_sync(sync_ptr,ptr,size_game_state);
-    exit(exit_status);
+
+
+void exit_error(game_status * game_ptr, semaphores_status * sync_ptr, size_t size_game_state) {
+    free_game_sync(sync_ptr);
+	free_game_state(game_ptr, size_game_state);
+    exit(EXIT_FAILURE);
 }
 
 int main(int argc, char const *argv[]) {
@@ -381,7 +386,7 @@ int main(int argc, char const *argv[]) {
     print_inicial_state(params);
 
     //SHM
-    game_status * game_state = create_game_state(sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
+    game_status * game_state = create_game_state(GAME_SIZE(game_state, params.width, params.height));
     semaphores_status * game_sync = create_game_sync();
 
     game_state->width = params.width;
@@ -400,18 +405,18 @@ int main(int argc, char const *argv[]) {
     int fd[game_state->amount_players][2];
     if (set_pipes(fd, game_state->amount_players) == EXIT_FAILURE) {
         perror("Error: pipe failed");
-        free_game_state_and_sync_with_free(EXIT_FAILURE,game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
+        exit_error(game_state, game_sync, GAME_SIZE(game_state, params.width, params.height));
     }
 
     // Crear procesos de jugadores
     if (set_players_processes(&params, game_state, fd) == EXIT_FAILURE) {
         perror("Error: set_players_processes failed");
-        free_game_state_and_sync_with_free(EXIT_FAILURE,game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
+        exit_error(game_state, game_sync, GAME_SIZE(game_state, params.width, params.height));
     }
 
     if (set_view_process(params.view, game_state->width, game_state->height) == EXIT_FAILURE) {
         perror("Error: set_view_process failed");
-        free_game_state_and_sync_with_free(EXIT_FAILURE,game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
+        exit_error(game_state, game_sync, GAME_SIZE(game_state, params.width, params.height));
     }
     
     int player=0;
@@ -452,6 +457,9 @@ int main(int argc, char const *argv[]) {
     for (int i = 0; i < game_state->amount_players; i++) {
         wait(NULL);
     }
-    free_game_state_and_sync(game_sync,game_state,sizeof(game_status) + (sizeof(int) * (params.width * params.height)));
+
+	free_game_state(game_state, GAME_SIZE(game_state, params.width, params.height));
+    free_game_sync(game_sync);
+
     return 0;
 }

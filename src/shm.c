@@ -79,16 +79,12 @@ void munmap_game_sync(semaphores_status * ptr) {
 	munmap((void*)ptr, sizeof(semaphores_status));
 }
 
-void free_game_sync(semaphores_status * ptr){
+void free_game_sync(semaphores_status * ptr) {
 	shm_unlink("/game_sync");
 	munmap_game_sync(ptr);
 }
 
-void free_game_state(game_status * ptr,size_t size){
+void free_game_state(game_status * ptr, size_t size) {
 	shm_unlink("/game_state");
 	munmap_game_state(ptr, size);
-}
-void free_game_state_and_sync(semaphores_status * sync_ptr,game_status * ptr,size_t size_game_state){
-	free_game_sync(sync_ptr);
-	free_game_state(ptr, size_game_state);
 }
