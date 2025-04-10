@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <libgen.h>
+#include <time.h>
 
 
 typedef struct {
@@ -37,7 +38,7 @@ int valid_possition(game_status * game_state, int x, int y) {
             BOARD_AT(game_state, x, y) > 0);
 }
 
-void fill_board(int width, int height, int * board) {
+static void fill_board(int width, int height, int * board) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             board[i * width + j] = randInt(1, 9);
@@ -45,7 +46,7 @@ void fill_board(int width, int height, int * board) {
     }
 }
 
-void set_initial_players_state(game_status * game_state, char * players[]) {
+static void set_initial_players_state(game_status * game_state, char * players[]) {
     for (int i = 0; i < game_state->amount_players; i++) {
         char name[150];
         strcpy(name, players[i]);
@@ -59,6 +60,33 @@ void set_initial_players_state(game_status * game_state, char * players[]) {
         game_state->players[i].cant_move = 0;
         BOARD_AT_PLAYER(game_state, i) = i * (-1);
     }
+}
+
+static size_t timeout = 0;
+
+static void set_timeout_value(size_t new_timeout) {
+    timeout = new_timeout;
+}
+
+static time_t timeouts[MAX_NUM_PLAYERS] = {0};
+
+static void set_initial_timeouts() {
+    time_t current_time = time(NULL);
+    for (size_t i = 0; i < MAX_NUM_PLAYERS; i++) {
+        timeouts[i] = current_time;
+    }
+}
+
+void set_initial_game_state(game_status * game_state, Tparameters params) {
+    game_state->width = params.width;
+    game_state->height = params.height;
+    game_state->can_end = false;
+    game_state->amount_players = params.amount_players;
+    fill_board(game_state->width, game_state->height, game_state->board);
+    set_initial_players_state(game_state, params.players);
+    set_timeout_value(params.timeout);
+    srand(params.seed);
+    set_initial_timeouts();
 }
 
 int has_next_move(game_status * game_state, int player) {
@@ -76,18 +104,20 @@ int has_next_move(game_status * game_state, int player) {
     return false;
 }
 
-void compute_next_move(game_status * game_state, Tplayer_move move) {
+void compute_next_move(game_status * game_state, Tplayer_move move, bool * valid_move) {
     T2D_move next_move = posible_moves[move.move % 8];
     if (!valid_possition(game_state, 
         POS_X(game_state, move.player) + next_move.x, 
         POS_Y(game_state, move.player) + next_move.y)) {
         game_state->players[move.player].amount_invalid_movements++;
+        *valid_move = false;
     } else {
         game_state->players[move.player].amount_valid_movements++;
         game_state->players[move.player].x += next_move.x;
         game_state->players[move.player].y += next_move.y;
         game_state->players[move.player].points += BOARD_AT_PLAYER(game_state, move.player);
         BOARD_AT_PLAYER(game_state, move.player) = move.player * (-1);
+        *valid_move = true;
     }
 }
 
@@ -132,7 +162,7 @@ int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move,
         return ERROR;
     }
 
-    struct timeval tv = {.tv_sec = 3, .tv_usec = 0};
+    struct timeval tv = {.tv_sec = 10, .tv_usec = 0};
 
     int act = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
 
@@ -162,7 +192,6 @@ int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move,
                 pipes[(*player_number)][0] = -1;
                 return SUCCESS; // que un jugador se haya desconectado no es un error
             } else {
-                printf("Player %d read %d\n", (*player_number), buffer);
                 move->player = (*player_number);
                 move->move = buffer;
                 (*player_number)++;
@@ -172,4 +201,17 @@ int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move,
         }
     }
     return ERROR;
+}
+
+void timeout_update(size_t player_number) {
+    timeouts[player_number] = time(NULL);
+}
+
+void check_players_timeout(game_status * game_state/* , int pipe[2] */) {
+    time_t current_time = time(NULL);
+    for (size_t i = 0; i < game_state->amount_players; i++) {
+        if (current_time - timeouts[i] > timeout) {
+            game_state->players[i].cant_move = true;
+        }
+    }
 }

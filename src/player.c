@@ -117,7 +117,8 @@ int main(int argc, char const *argv[]){
         
         if (do_move){
             do_move=false;
-            write(1, &next_dir, 1);
+            // next_dir = -1;
+            write(STDOUT_FILENO, &next_dir, 1);
         }
     }
 

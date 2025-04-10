@@ -4,10 +4,10 @@
 #include <sys/wait.h>
 #include <semaphore.h>
 
-typedef int pipe_array[][2];
-
 #define MAX_NUM_PLAYERS 9
 #define MAX_PLAYER_LENGTH 16
+
+typedef int pipe_array[MAX_NUM_PLAYERS][2];
 
 #define GAME_STATUS_SIZE(game_state, width, height) (sizeof(*game_state) + (sizeof(int) * (width * height)))
 
