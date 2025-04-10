@@ -107,6 +107,15 @@ static int get_max_fd(int fd[][2], size_t amount_players) {
     return max_fd;
 }
 
+static int check_pipes_open(int fd[][2], size_t amount_players) {
+    for (int i = 0; i < amount_players; i++) {
+        if (fd[i][0] != -1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int* player_number) {
     int max_fd = get_max_fd(fd, amount_players);
     fd_set read_fds;
@@ -118,10 +127,10 @@ int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int*
         }
     }
 
-    // if (!check_pipes_open(fd, amount_players)) {
-    //     printf("No pipes open. Ending game.\n");
-    //     return ERROR;
-    // }
+    if (!check_pipes_open(fd, amount_players)) {
+        printf("No pipes open. Ending game.\n");
+        return ERROR;
+    }
 
     struct timeval tv = {.tv_sec = 3, .tv_usec = 0};
 

@@ -4,6 +4,8 @@
 #include "structures.h"
 #include <stddef.h>
 
+typedef int * pipes[2];
+
 typedef struct {
     int player;
     int move;
