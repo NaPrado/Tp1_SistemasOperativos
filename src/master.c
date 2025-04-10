@@ -54,13 +54,13 @@ int main(int argc, char const *argv[]) {
         sem_post(&game_sync->show_needed);
         sem_wait(&game_sync->show_done);
 
+        check_players_timeout(game_state);
+
         // leer movimiento
         Tplayer_move move = {.player = -1, .move = -1};
-        while (move.move == -1 || move.player == -1) {
-            if (get_player_move(pipes, game_state->amount_players, &move, &player) == ERROR) {
-                game_state->can_end = true;
-                break;
-            }
+        if (get_player_move(pipes, game_state->amount_players, &move, &player) == ERROR) {
+            game_state->can_end = true;
+            break;
         }
 
         sem_wait(&game_sync->master_mutex);
@@ -74,15 +74,12 @@ int main(int argc, char const *argv[]) {
         compute_next_move(game_state, move, &valid_move);
         verify_players_cant_move(game_state);
         
-
         sem_post(&game_sync->game_state_mutex);
 
         // si el movimiento fue valido, checkeamos que no se halla pasado el timeout
-        // if (valid_move) {
-        //     timeout_update(move.player);
-        // }
-
-        // check_players_timeout(game_state);
+        if (valid_move) {
+            timeout_update(move.player);
+        }
 
     }
     // ultimo post para que la vista termine
