@@ -97,37 +97,37 @@ void verify_players_cant_move(game_status * game_state) {
     }
 }
 
-static int get_max_fd(int fd[][2], size_t amount_players) {
+static int get_max_fd(pipe_array pipes, size_t amount_players) {
     int max_fd = ERROR;
     for (int i = 0; i < amount_players; i++) {
-        if (fd[i][0] > max_fd) {
-            max_fd = fd[i][0];
+        if (pipes[i][0] > max_fd) {
+            max_fd = pipes[i][0];
         }
     }
     return max_fd;
 }
 
-static int check_pipes_open(int fd[][2], size_t amount_players) {
+static int check_pipes_open(pipe_array pipes, size_t amount_players) {
     for (int i = 0; i < amount_players; i++) {
-        if (fd[i][0] != -1) {
+        if (pipes[i][0] != -1) {
             return true;
         }
     }
     return false;
 }
 
-int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int* player_number) {
-    int max_fd = get_max_fd(fd, amount_players);
+int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move, int* player_number) {
+    int max_fd = get_max_fd(pipes, amount_players);
     fd_set read_fds;
     FD_ZERO(&read_fds);
 
     for (int i = 0; i < amount_players; i++) {
-        if (fd[i][0] != -1) {
-            FD_SET(fd[i][0], &read_fds);
+        if (pipes[i][0] != -1) {
+            FD_SET(pipes[i][0], &read_fds);
         }
     }
 
-    if (!check_pipes_open(fd, amount_players)) {
+    if (!check_pipes_open(pipes, amount_players)) {
         printf("No pipes open. Ending game.\n");
         return ERROR;
     }
@@ -146,9 +146,9 @@ int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int*
     }
 
     for (; *player_number < amount_players; (*player_number)++,(*player_number)%=amount_players) {
-        if (fd[(*player_number)][0] != -1 && FD_ISSET(fd[(*player_number)][0], &read_fds)) {
+        if (pipes[(*player_number)][0] != -1 && FD_ISSET(pipes[(*player_number)][0], &read_fds)) {
             char buffer;
-            int bytes_read = read(fd[(*player_number)][0], &buffer, 1);
+            int bytes_read = read(pipes[(*player_number)][0], &buffer, 1);
             if (bytes_read == -1) {
                 perror("Error: read failed");
                 return ERROR;
@@ -158,8 +158,8 @@ int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int*
                 printf("Player %d disconnected.\n", (*player_number));
                 move->player = -1;
                 move->move = -1;
-                close(fd[(*player_number)][0]);
-                fd[(*player_number)][0] = -1;
+                close(pipes[(*player_number)][0]);
+                pipes[(*player_number)][0] = -1;
                 return SUCCESS; // que un jugador se haya desconectado no es un error
             } else {
                 printf("Player %d read %d\n", (*player_number), buffer);

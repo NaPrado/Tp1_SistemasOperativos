@@ -4,8 +4,6 @@
 #include "structures.h"
 #include <stddef.h>
 
-typedef int * pipes[2];
-
 typedef struct {
     int player;
     int move;
@@ -17,7 +15,7 @@ void fill_board(int width, int height, int * board);
 
 void set_initial_players_state(game_status * game_state, char * players[]);
 
-int get_player_move(int fd[][2], size_t amount_players, Tplayer_move *move, int* player_number);
+int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move * move, int * player_number);
 
 int has_next_move(game_status * game_state, int player);
 

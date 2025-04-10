@@ -4,6 +4,8 @@
 #include <sys/wait.h>
 #include <semaphore.h>
 
+typedef int pipe_array[][2];
+
 #define MAX_NUM_PLAYERS 9
 #define MAX_PLAYER_LENGTH 16
 

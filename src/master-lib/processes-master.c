@@ -12,31 +12,31 @@ enum PIPES {
     WRITE_END = 1
 };
 
-int set_pipes(int fd[][2], int num_players) {
+int set_pipes(pipe_array pipes, int num_players) {
     for (int i = 0; i < num_players; i++) {
-        if (pipe(fd[i]) == -1) {
+        if (pipe(pipes[i]) == -1) {
             return ERROR;
         }
     }
     return SUCCESS;
 }
 
-int set_players_processes(Tparameters* params,game_status* game_state, int fd[][2]) {
+int set_players_processes(Tparameters* params,game_status* game_state, pipe_array pipes) {
     int pid = 0;
     for (int i = 0; i < params->amount_players; i++) {
         if ((pid = fork()) < 0) {
             perror("Error: player fork failed");
             return ERROR;
         } else if (pid == 0) { // hijo
-            if (close(fd[i][READ_END]) == -1) {
+            if (close(pipes[i][READ_END]) == -1) {
                 perror("Error: pipe setting");
                 return ERROR;
             }
-            if (dup2(fd[i][WRITE_END], STDOUT_FILENO) == -1) {
+            if (dup2(pipes[i][WRITE_END], STDOUT_FILENO) == -1) {
                 perror("Error: pipe setting");
                 return ERROR;
             }
-            if (close(fd[i][WRITE_END]) == -1) {
+            if (close(pipes[i][WRITE_END]) == -1) {
                 perror("Error: pipe setting");
                 return ERROR;
             }
@@ -56,7 +56,7 @@ int set_players_processes(Tparameters* params,game_status* game_state, int fd[][
             execve(params->players[i], new_argv, NULL);
             return ERROR;
         } else { // padre
-            if (close(fd[i][WRITE_END]) == -1) {
+            if (close(pipes[i][WRITE_END]) == -1) {
                 return ERROR;
             }
             game_state->players[i].pid = pid;
