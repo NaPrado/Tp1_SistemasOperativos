@@ -15,9 +15,9 @@ PROGRAMS = master player view
 P_LIBS = game-logic-master.c parameters-master.c processes-master.c sync-lib.c
 
 # Archivos fuente
-SOURCES_master = $(SRCDIR)/master.c $(SRCDIR)/shm.c $(addprefix $(SRCDIR)/master-lib/, game-logic-master.c parameters-master.c processes-master.c sync-lib.c random.c)
-SOURCES_player = $(SRCDIR)/player.c $(SRCDIR)/shm.c $(SRCDIR)/master-lib/sync-lib.c
-SOURCES_view = $(SRCDIR)/view.c $(SRCDIR)/shm.c
+SOURCES_master = $(SRCDIR)/master.c $(addprefix $(SRCDIR)/master-lib/, shm.c sync-lib.c random.c game-logic-master.c parameters-master.c processes-master.c)
+SOURCES_player = $(SRCDIR)/player.c $(addprefix $(SRCDIR)/master-lib/, shm.c sync-lib.c)
+SOURCES_view = $(SRCDIR)/view.c $(addprefix $(SRCDIR)/master-lib/, shm.c)
 
 # Archivos objeto
 OBJS_master = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES_master))
