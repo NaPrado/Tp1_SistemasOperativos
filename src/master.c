@@ -1,34 +1,20 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <time.h>
 
+#include "return-codes.h"
+#include "structures.h"
+#include "game-logic-master.h"
+#include "parameters-master.h"
+#include "processes-master.h"
+#include "sync-lib.h"
 #include "shm.h"
-#include "utils.h"
-
-enum params_default {
-    DEF_WIDTH = 10, 
-    DEF_HEIGHT = 10, 
-    DEF_DELAY = 200, 
-    DEF_TIMEOUT = 10
-};
 
 int main(int argc, char const *argv[]) {
 
     printf("\033[H\033[J\n");
 
-    //params
-    Tparameters params = {
-        .width = DEF_WIDTH,
-        .height = DEF_HEIGHT,
-        .delay = DEF_DELAY,
-        .timeout = DEF_TIMEOUT,
-        .seed = time(NULL),
-        .view = NULL,
-        .players = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-        .amount_players = 0
-    };
-
+    Tparameters params = get_default_params();
 
     if (set_params(argc, (char * const *) argv, &params) == ERROR) {
         return EXIT_FAILURE;
@@ -37,7 +23,7 @@ int main(int argc, char const *argv[]) {
     print_inicial_state(params);
 
     //SHM
-    game_status * game_state = create_game_state(GAME_SIZE(game_state, params.width, params.height));
+    game_status * game_state = create_game_state(GAME_STATUS_SIZE(game_state, params.width, params.height));
     semaphores_status * game_sync = create_game_sync();
 
     game_state->width = params.width;
@@ -55,16 +41,16 @@ int main(int argc, char const *argv[]) {
     // Abrir pipes
     int fd[game_state->amount_players][2];
     if (set_pipes(fd, game_state->amount_players) == ERROR) {
-        exit_error(game_state, game_sync, GAME_SIZE(game_state, params.width, params.height));
+        exit_error(game_state, game_sync, GAME_STATUS_SIZE(game_state, params.width, params.height));
     }
 
     // Crear procesos de jugadores
     if (set_players_processes(&params, game_state, fd) == ERROR) {
-        exit_error(game_state, game_sync, GAME_SIZE(game_state, params.width, params.height));
+        exit_error(game_state, game_sync, GAME_STATUS_SIZE(game_state, params.width, params.height));
     }
 
     if (set_view_process(params.view, game_state->width, game_state->height) == ERROR) {
-        exit_error(game_state, game_sync, GAME_SIZE(game_state, params.width, params.height));
+        exit_error(game_state, game_sync, GAME_STATUS_SIZE(game_state, params.width, params.height));
     }
     
     int player=0;
@@ -109,7 +95,7 @@ int main(int argc, char const *argv[]) {
         wait(NULL);
     }
 
-	free_game_state(game_state, GAME_SIZE(game_state, params.width, params.height));
+	free_game_state(game_state, GAME_STATUS_SIZE(game_state, params.width, params.height));
     free_game_sync(game_sync);
 
     return 0;

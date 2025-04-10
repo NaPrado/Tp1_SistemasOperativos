@@ -1,6 +1,8 @@
-#include "../include/shm.h"
-#include "../include/structures.h"
-#include "../include/random.h"
+#include "shm.h"
+#include "structures.h"
+#include "return-codes.h"
+#include "sync-lib.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -59,11 +61,8 @@ int main(int argc, char const *argv[]){
     
     semaphores_status * game_sync = get_game_sync();
     //chequear el size
-    game_status * game_state = get_game_state(sizeof(game_status) + (sizeof(int) * (height * width)));
+    game_status * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
     
-    sem_t * game_state_mutex= &(game_sync->game_state_mutex);
-    sem_t * master_mutex= &(game_sync->master_mutex);
-    sem_t * player_read_count_mutex= &(game_sync->player_read_count_mutex);
     int player_number = 0;
     pid_t pid=getpid();
     for (size_t i = 0; i < game_state->amount_players; i++){
@@ -102,33 +101,28 @@ int main(int argc, char const *argv[]){
     bool do_move=false;
     while (!game_state->players[player_number].cant_move) {
         // seccion de entrada
-        sem_wait(master_mutex);
-        sem_post(master_mutex);
-
-        sem_wait(player_read_count_mutex); // espero a modificar variable
-        if (game_sync->player_reading_status++ == 0) sem_wait(game_state_mutex); // espero a que writer libere
-        sem_post(player_read_count_mutex); // dejo modificar variable
+        set_player_reading(game_sync);
 
         // seccion critica de lectura
 
-        int amount_moves=(game_state->players[player_number].amount_valid_movements)+(game_state->players[player_number].amount_invalid_movements);
-        if (amount_moves!=last_amount_moves){    
-            last_amount_moves=amount_moves;
-            next_dir=get_next_move(game_state,player_number);
-            do_move=true;
+        int amount_moves = (game_state->players[player_number].amount_valid_movements) + (game_state->players[player_number].amount_invalid_movements);
+        if (amount_moves != last_amount_moves){    
+            last_amount_moves = amount_moves;
+            next_dir = get_next_move(game_state,player_number);
+            do_move = true;
         }
 
         // seccion de salida
-        sem_wait(player_read_count_mutex); // espero a modificar variable
-        if (game_sync->player_reading_status-- == 1) sem_post(game_state_mutex); // dejo al writer
-        sem_post(player_read_count_mutex); // dejo modificar variable
+        unset_player_reading(game_sync);
         
         if (do_move){
             do_move=false;
-            write(1,&next_dir,1);
+            write(1, &next_dir, 1);
         }
     }
-    munmap_game_state(game_state, sizeof(game_status) + (sizeof(int) * (height * width)));
+
+    munmap_game_state(game_state, GAME_STATUS_SIZE(game_state, width, height));
     munmap_game_sync(game_sync);
-    return 0;
+
+    return SUCCESS;
 }

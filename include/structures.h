@@ -3,8 +3,14 @@
 #include <stdbool.h>
 #include <sys/wait.h>
 #include <semaphore.h>
+
+#define MAX_NUM_PLAYERS 9
+#define MAX_PLAYER_LENGTH 16
+
+#define GAME_STATUS_SIZE(game_state, width, height) (sizeof(*game_state) + (sizeof(int) * (width * height)))
+
 typedef struct { 
-    char name_player[16]; // Nombre del jugador 
+    char name_player[MAX_PLAYER_LENGTH]; // Nombre del jugador 
     unsigned int points; // Puntaje 
     unsigned int amount_invalid_movements; // Cantidad de solicitudes de movimientos inválidas realizadas 
     unsigned int amount_valid_movements; // Cantidad de solicitudes de movimientos válidas realizadas 
@@ -17,7 +23,7 @@ typedef struct {
   unsigned short width; // Ancho del tablero 
   unsigned short height; // Alto del tablero 
   unsigned int amount_players; // Cantidad de jugadores 
-  player_status players[9]; // Lista de jugadores  
+  player_status players[MAX_NUM_PLAYERS]; // Lista de jugadores  
   bool can_end; // Indica si el juego no se ha terminado 
   int board[]; // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1  
 } game_status;
@@ -30,4 +36,15 @@ typedef struct {
   sem_t player_read_count_mutex;  // Protege la variable 'player_reading_status'  
   unsigned int player_reading_status;  // Cantidad de jugadores leyendo el estado  
 } semaphores_status;
+typedef struct {
+    size_t width; // ancho del tablero
+    size_t height; // alto del tablero
+    size_t delay;
+    size_t timeout;
+    size_t seed;
+    char * view;
+    char * players[MAX_NUM_PLAYERS];
+    size_t amount_players;
+} Tparameters;
+
 #endif

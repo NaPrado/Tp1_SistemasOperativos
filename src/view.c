@@ -122,9 +122,9 @@ int main(int argc, char const *argv[]) {
     height = atoi(argv[2]);
     semaphores_status * game_sync = get_game_sync();
     //chequear el size
-    game_status * game_state = get_game_state(sizeof(game_status) + (sizeof(int) * (height * width)));
-    sem_t * show_done= &(game_sync->show_done);
-    sem_t * show_needed= &(game_sync->show_needed);
+    game_status * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
+    sem_t * show_done = &(game_sync->show_done);
+    sem_t * show_needed = &(game_sync->show_needed);
 
     while (!game_state->can_end) {
         sem_wait(show_needed);
@@ -133,12 +133,12 @@ int main(int argc, char const *argv[]) {
         }
         clear_screen();
         print_view(game_state->board, height, width, game_state);
-        printf("%s",check_if_invalid(game_state->players, game_state->amount_players)?"\a":"");
+        printf("%s", check_if_invalid(game_state->players, game_state->amount_players) ? "\a" : "");
         print_stats(game_state);
         sem_post(show_done);
     }
 
-    munmap_game_state(game_state, sizeof(game_status) + (sizeof(int) * (height * width)));
+    munmap_game_state(game_state, GAME_STATUS_SIZE(game_state, width, height));
     munmap_game_sync(game_sync);
 
     return 0;

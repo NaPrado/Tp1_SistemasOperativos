@@ -1,4 +1,4 @@
-#include "../include/shm.h"
+#include "shm.h"
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -29,7 +29,7 @@ void * create_shmem(const char * name, size_t size, mode_t mode) {
 	return p;
 }
 game_status * create_game_state(size_t size) {
-	return (game_status *) create_shmem("/game_state", sizeof(game_status) + (sizeof(int) * size), 0644);
+	return (game_status *) create_shmem("/game_state", size, 0644);
 }
 semaphores_status * create_game_sync() {
 	return (semaphores_status *) create_shmem("/game_sync", sizeof(semaphores_status), 0666);
@@ -72,11 +72,13 @@ semaphores_status * get_game_sync() {
 	close(fd);
 	return (semaphores_status *) p;
 }
+
 void munmap_game_state(game_status * ptr, size_t size) {
 	munmap(ptr, size);
 }
+
 void munmap_game_sync(semaphores_status * ptr) {
-	munmap((void*)ptr, sizeof(semaphores_status));
+	munmap((void *)ptr, sizeof(semaphores_status));
 }
 
 void free_game_sync(semaphores_status * ptr) {
@@ -87,4 +89,11 @@ void free_game_sync(semaphores_status * ptr) {
 void free_game_state(game_status * ptr, size_t size) {
 	shm_unlink("/game_state");
 	munmap_game_state(ptr, size);
+}
+
+
+void exit_error(game_status * game_ptr, semaphores_status * sync_ptr, size_t size_game_state) {
+    free_game_sync(sync_ptr);
+	free_game_state(game_ptr, size_game_state);
+    exit(EXIT_FAILURE);
 }
