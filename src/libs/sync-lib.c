@@ -20,6 +20,11 @@ void unset_master_writing(Tgame_sync * game_sync) {
     sem_post(&game_sync->game_state_mutex);
 }
 
+void master_signal_print(Tgame_sync * game_sync) {
+    sem_post(&game_sync->show_needed);
+    sem_wait(&game_sync->show_done);
+}
+
 void set_player_reading(Tgame_sync * game_sync) {
     sem_wait(&game_sync->master_mutex);
     sem_post(&game_sync->master_mutex);
@@ -34,6 +39,14 @@ void unset_player_reading(Tgame_sync * game_sync) {
     if (game_sync->player_reading_status-- == 1)
         sem_post(&game_sync->game_state_mutex); // dejo al writer
     sem_post(&game_sync->player_read_count_mutex); // dejo modificar variable
+}
+
+void wait_view(Tgame_sync * game_sync) {
+    sem_wait(&game_sync->show_needed);
+}
+
+void signal_view(Tgame_sync * game_sync) {
+    sem_post(&game_sync->show_done);
 }
 
 void destroy_semaphores(Tgame_sync * game_sync) {

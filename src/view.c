@@ -3,8 +3,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <unistd.h>
-#include "../include/shm.h"
-#include "../include/structures.h"
+
+#include "shm.h"
+#include "structures.h"
+#include "sync-lib.h"
+
 #define BG_GOLD   "\x1b[48;5;178m"  // Fondo dorado
 #define FG_BLACK  "\x1b[30m"        // Texto negro
 // Vector de códigos de color
@@ -123,19 +126,14 @@ int main(int argc, char const *argv[]) {
     Tgame_sync * game_sync = get_game_sync();
     //chequear el size
     Tgame_state * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
-    sem_t * show_done = &(game_sync->show_done);
-    sem_t * show_needed = &(game_sync->show_needed);
 
     while (!game_state->can_end) {
-        sem_wait(show_needed);
-        if (game_state->can_end) {
-            break;
-        }
+        wait_view(game_sync);
         clear_screen();
         print_view(game_state->board, height, width, game_state);
         printf("%s", check_if_invalid(game_state->players, game_state->amount_players) ? "\a" : "");
         print_stats(game_state);
-        sem_post(show_done);
+        signal_view(game_sync);
     }
 
     munmap_game_state(game_state, GAME_STATUS_SIZE(game_state, width, height));

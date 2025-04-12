@@ -48,8 +48,7 @@ int main(int argc, char const *argv[]) {
 
         // print view
         usleep(params.delay * 1000);
-        sem_post(&game_sync->show_needed);
-        sem_wait(&game_sync->show_done);
+        master_signal_print(game_sync);
 
         check_players_timeout(game_state);
 
@@ -60,10 +59,7 @@ int main(int argc, char const *argv[]) {
             break;
         }
 
-        sem_wait(&game_sync->master_mutex);
-        sem_wait(&game_sync->game_state_mutex);
-        sem_post(&game_sync->master_mutex);
-
+        set_master_writing(game_sync);
 
         // zona critica (writer)
         // calcular siguiente estado de juego
@@ -71,7 +67,7 @@ int main(int argc, char const *argv[]) {
         compute_next_move(game_state, move, &valid_move);
         verify_players_cant_move(game_state);
         
-        sem_post(&game_sync->game_state_mutex);
+        unset_master_writing(game_sync);
 
         // si el movimiento fue valido, checkeamos que no se halla pasado el timeout
         if (valid_move) {
@@ -80,7 +76,7 @@ int main(int argc, char const *argv[]) {
 
     }
     // ultimo post para que la vista termine
-    sem_post(&game_sync->show_needed);
+    master_signal_print(game_sync);
     
     WAIT_CHILDS(game_state->amount_players + 1);
 
