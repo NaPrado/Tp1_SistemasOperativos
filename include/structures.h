@@ -38,6 +38,7 @@ typedef struct {
   sem_t player_read_count_mutex;  // Protege la variable 'player_reading_status'  
   unsigned int player_reading_status;  // Cantidad de jugadores leyendo el estado  
 } Tgame_sync;
+
 typedef struct {
     size_t width; // ancho del tablero
     size_t height; // alto del tablero

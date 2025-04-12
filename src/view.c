@@ -8,8 +8,16 @@
 #include "structures.h"
 #include "sync-lib.h"
 
-#define BG_GOLD   "\x1b[48;5;178m"  // Fondo dorado
-#define FG_BLACK  "\x1b[30m"        // Texto negro
+#define RESET_COLOR "\033[0;0m"
+
+#define BG_GOLD   "\x1b[48;5;178m"
+#define FG_BLACK  "\x1b[30m"
+#define FG_BLUE "\x1b[38;5;21m"
+
+#define ES_CABEZA(x, y, j, i) ((x) == (j) && (y) == (i))
+
+#define BOARD_AT(board, w, i, j) ((board)[(i) * (w) + (j)])
+
 // Vector de códigos de color
 const char *colores[] = {
     "\033[40;97m",  // Fondo negro, letra blanca
@@ -22,6 +30,7 @@ const char *colores[] = {
     "\033[47;30m",  // Fondo blanco, letra negra
     "\033[100;97m"  // Fondo gris claro, letra blanca
 };
+
 const char *colorescabeza[] = {
     "\033[48;5;235;97m",  // Cabeza con fondo gris más oscuro y letra blanca
     "\033[48;5;196;97m",  // Cabeza con fondo rojo y letra blanca
@@ -34,58 +43,46 @@ const char *colorescabeza[] = {
     "\033[48;5;237;97m"   // Cabeza con fondo gris oscuro y letra blanca
 };
 
-
-const char *colores_reset = "\033[0;0m"; // Restablecer colores
-
-void print_horizontal_border(int width){
-    printf("%s%s",BG_GOLD,FG_BLACK);
-    for (size_t i = 0; i < width+2; i++){
+void print_horizontal_border(int width) {
+    printf("%s%s", BG_GOLD, FG_BLACK);
+    for (size_t i = 0; i < width + 2; i++) {
         printf("  *  ");
     }
-    printf("%s\n", colores_reset);    
+    printf("%s\n", RESET_COLOR);    
 }
 
-void print_chomp_champs_logo(int width){
+void print_chomp_champs_logo(int width) {
     print_horizontal_border(width);
-    printf("%s%s  *  %s",BG_GOLD,FG_BLACK,"\x1b[38;5;21m");
-    for (int i = 0; i < width-1; i++){
-        if ((width/2)-1==i){
-            printf("%sCHOMPCHAMPS",width%2!=0?" ":"");
-        }
-        else{
+    printf("%s%s  *  %s", BG_GOLD, FG_BLACK, FG_BLUE);
+    for (int i = 0; i < width-1; i++) {
+        if ((width / 2) - 1 == i) {
+            printf("%sCHOMPCHAMPS", (width % 2 != 0) ? " " : "");
+        } else {
             printf("     ");
         }
     }
-    printf("%s%s%s*  \n",BG_GOLD,FG_BLACK,width%2!=0?"":" ");
+    printf("%s%s%s*  \n", BG_GOLD, FG_BLACK, (width % 2 != 0) ? "" : " ");
     print_horizontal_border(width);
 }
 
 void print_view(int * board, size_t height, size_t width, Tgame_state * game_state) {
-    int flag = 0;
+
     print_chomp_champs_logo(width);
+
     for (size_t i = 0; i < height; i++) {
-        printf("%s%s  *  %s",BG_GOLD,FG_BLACK,colores_reset);
+        printf("%s%s  *  %s", BG_GOLD, FG_BLACK, RESET_COLOR);
         for (size_t j = 0; j < width; j++) {
-            for (size_t k = 0; k < game_state->amount_players; k++) {
-                if(board[j + i * width] == -k){
-                    if (game_state->players[k].x == j && game_state->players[k].y == i) {
-                        printf("%s     ", colorescabeza[k]);
-                        flag = 1;
-                    } else {
-                        printf("%s     ", colores[k]);
-                        flag = 1;
-                    }
-                } 
+
+            if (BOARD_AT(board, width, i, j) <= 0) {
+                size_t k = (-1) * BOARD_AT(board, width, i, j);
+                printf("%s     ", ES_CABEZA(game_state->players[k].x, game_state->players[k].y, j, i) ? colorescabeza[k] : colores[k]);
+            } else {
+                printf("| %d |", BOARD_AT(board, width, i, j));
             }
-            if (board[j + i * width] < 0 && !flag) {
-                printf("|%d |", board[j + i * width]);
-            } else if (!flag) {
-                printf("| %d |", board[j + i * width]);
-            }
-            flag = 0;
-            printf("%s", colores_reset);
+
+            printf("%s", RESET_COLOR);
         }
-        printf("%s%s  *  %s\n",BG_GOLD,FG_BLACK,colores_reset);
+        printf("%s%s  *  %s\n", BG_GOLD, FG_BLACK, RESET_COLOR);
     }
     print_horizontal_border(width);
 }
@@ -95,7 +92,7 @@ void clear_screen() {
     write(STDOUT_FILENO, clear, strlen(clear));
 }
 static void print_player_stats(Tplayer_state* player_state){
-    printf("name:%s\tpoints:%d\tvalidM:%d\tinvalidM:%d\tcoords:(%d,%d)%s\n", player_state->name_player, player_state->points, player_state->amount_valid_movements, player_state->amount_invalid_movements, player_state->x, player_state->y, colores_reset);
+    printf("name:%s\tpoints:%d\tvalidM:%d\tinvalidM:%d\tcoords:(%d,%d)%s\n", player_state->name_player, player_state->points, player_state->amount_valid_movements, player_state->amount_invalid_movements, player_state->x, player_state->y, RESET_COLOR);
 }
 
 
@@ -128,11 +125,17 @@ int main(int argc, char const *argv[]) {
     Tgame_state * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
 
     while (!game_state->can_end) {
+        
         wait_view(game_sync);
+        
         clear_screen();
+        
         print_view(game_state->board, height, width, game_state);
+        
         printf("%s", check_if_invalid(game_state->players, game_state->amount_players) ? "\a" : "");
+        
         print_stats(game_state);
+        
         signal_view(game_sync);
     }
 
