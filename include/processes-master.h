@@ -3,6 +3,8 @@
 
 #include "structures.h"
 
+#define WAIT_CHILDS(num) for (int i = 0; i < (num); i++) wait(NULL)
+
 int set_pipes(pipe_array pipes, int num_players);
 
 int set_players_processes(Tparameters * params, Tgame_state * game_state, pipe_array pipes);

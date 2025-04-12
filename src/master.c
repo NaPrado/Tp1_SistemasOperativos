@@ -82,9 +82,7 @@ int main(int argc, char const *argv[]) {
     // ultimo post para que la vista termine
     sem_post(&game_sync->show_needed);
     
-    for (int i = 0; i < game_state->amount_players + 1; i++) { // +1 para el view
-        wait(NULL);
-    }
+    WAIT_CHILDS(game_state->amount_players + 1);
 
 	free_game_state(game_state, GAME_STATUS_SIZE(game_state, params.width, params.height));
     free_game_sync(game_sync);
