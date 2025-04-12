@@ -21,8 +21,8 @@ int main(int argc, char const *argv[]) {
     print_inicial_state(params);
 
     //SHM
-    game_status * game_state = create_game_state(GAME_STATUS_SIZE(game_state, params.width, params.height));
-    semaphores_status * game_sync = create_game_sync();
+    Tgame_state * game_state = create_game_state(GAME_STATUS_SIZE(game_state, params.width, params.height));
+    Tgame_sync * game_sync = create_game_sync();
 
     set_initial_game_state(game_state, params);
 

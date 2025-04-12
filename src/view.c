@@ -57,7 +57,7 @@ void print_chomp_champs_logo(int width){
     print_horizontal_border(width);
 }
 
-void print_view(int * board, size_t height, size_t width, game_status * game_state) {
+void print_view(int * board, size_t height, size_t width, Tgame_state * game_state) {
     int flag = 0;
     print_chomp_champs_logo(width);
     for (size_t i = 0; i < height; i++) {
@@ -91,12 +91,12 @@ void clear_screen() {
     const char *clear = "\033[2J\033[H"; // Código ANSI para limpiar pantalla y mover el cursor a la esquina superior izquierda
     write(STDOUT_FILENO, clear, strlen(clear));
 }
-static void print_player_stats(player_status* player_state){
+static void print_player_stats(Tplayer_state* player_state){
     printf("name:%s\tpoints:%d\tvalidM:%d\tinvalidM:%d\tcoords:(%d,%d)%s\n", player_state->name_player, player_state->points, player_state->amount_valid_movements, player_state->amount_invalid_movements, player_state->x, player_state->y, colores_reset);
 }
 
 
-void print_stats(game_status* game_state){
+void print_stats(Tgame_state * game_state){
     for (size_t i = 0; i < game_state->amount_players; i++){
         printf("%s",colores[i]);
         print_player_stats(&(game_state->players)[i]);
@@ -104,7 +104,7 @@ void print_stats(game_status* game_state){
 }
 //esto es para hacer ruido si es invalida la pos
 int invalid[9]={0};
-int check_if_invalid(player_status players[9], int amount_players){
+int check_if_invalid(Tplayer_state players[9], int amount_players){
     int ret=0;
     for (size_t i = 0; i < amount_players; i++){
         if (players[i].amount_invalid_movements!=invalid[i]){
@@ -120,9 +120,9 @@ int main(int argc, char const *argv[]) {
     int height, width;
     width = atoi(argv[1]);
     height = atoi(argv[2]);
-    semaphores_status * game_sync = get_game_sync();
+    Tgame_sync * game_sync = get_game_sync();
     //chequear el size
-    game_status * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
+    Tgame_state * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
     sem_t * show_done = &(game_sync->show_done);
     sem_t * show_needed = &(game_sync->show_needed);
 

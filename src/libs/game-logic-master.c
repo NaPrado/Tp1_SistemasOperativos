@@ -34,7 +34,7 @@ T2D_move posible_moves[8] = {
 #define BOARD_AT(game_state, x, y) ((game_state)->board[(y) * game_state->width + (x)])
 #define BOARD_AT_PLAYER(game_state, player) (BOARD_AT(game_state, POS_X(game_state, player), POS_Y(game_state, player)))
 
-int valid_possition(game_status * game_state, int x, int y) {
+int valid_possition(Tgame_state * game_state, int x, int y) {
     return (x >= 0 && x < game_state->width && y >= 0 && y < game_state->height && 
             BOARD_AT(game_state, x, y) > 0);
 }
@@ -47,7 +47,7 @@ static void fill_board(int width, int height, int * board) {
     }
 }
 
-static void set_inicial_players_position(game_status * game_state) {
+static void set_inicial_players_position(Tgame_state * game_state) {
 
     double h = (game_state->height - 1) / 2.0;
     double k = (game_state->width - 1) / 2.0;
@@ -67,7 +67,7 @@ static void set_inicial_players_position(game_status * game_state) {
     }
 }
 
-static void set_initial_players_state(game_status * game_state, char * players[]) {
+static void set_initial_players_state(Tgame_state * game_state, char * players[]) {
     for (int i = 0; i < game_state->amount_players; i++) {
         char name[150];
         strcpy(name, players[i]);
@@ -96,20 +96,20 @@ static void set_initial_timeouts() {
     }
 }
 
-void set_initial_game_state(game_status * game_state, Tparameters params) {
+void set_initial_game_state(Tgame_state * game_state, Tparameters params) {
     game_state->width = params.width;
     game_state->height = params.height;
     game_state->can_end = false;
     game_state->amount_players = params.amount_players;
+    srand(params.seed);
     fill_board(game_state->width, game_state->height, game_state->board);
     set_inicial_players_position(game_state);
     set_initial_players_state(game_state, params.players);
     set_timeout_value(params.timeout);
-    srand(params.seed);
     set_initial_timeouts();
 }
 
-int has_next_move(game_status * game_state, int player) {
+int has_next_move(Tgame_state * game_state, int player) {
     int x = POS_X(game_state, player);
     int y = POS_Y(game_state, player);
     for (int i = y - 1; i <= y + 1; i++) {
@@ -124,7 +124,7 @@ int has_next_move(game_status * game_state, int player) {
     return false;
 }
 
-void compute_next_move(game_status * game_state, Tplayer_move move, bool * valid_move) {
+void compute_next_move(Tgame_state * game_state, Tplayer_move move, bool * valid_move) {
     T2D_move next_move = posible_moves[move.move % 8];
     if (!valid_possition(game_state, 
         POS_X(game_state, move.player) + next_move.x, 
@@ -141,7 +141,7 @@ void compute_next_move(game_status * game_state, Tplayer_move move, bool * valid
     }
 }
 
-void verify_players_cant_move(game_status * game_state) {
+void verify_players_cant_move(Tgame_state * game_state) {
     for (int i = 0; i < game_state->amount_players; i++) {
         game_state->players[i].cant_move = !has_next_move(game_state, i);
     }
@@ -227,7 +227,7 @@ void timeout_update(size_t player_number) {
     timeouts[player_number] = time(NULL);
 }
 
-void check_players_timeout(game_status * game_state/* , int pipe[2] */) {
+void check_players_timeout(Tgame_state * game_state/* , int pipe[2] */) {
     time_t current_time = time(NULL);
     for (size_t i = 0; i < game_state->amount_players; i++) {
         if (current_time - timeouts[i] > timeout) {

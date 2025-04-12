@@ -30,7 +30,7 @@ static int directions[3][3]={
     {5,4,3}
 };
 
-int get_next_move(game_status * game_state, int player_number){
+int get_next_move(Tgame_state * game_state, int player_number){
     int x=game_state->players[player_number].x;
     int y=game_state->players[player_number].y;
     int last_points=-10;
@@ -59,9 +59,9 @@ int main(int argc, char const *argv[]){
     width = atoi(argv[1]);
     height = atoi(argv[2]);
     
-    semaphores_status * game_sync = get_game_sync();
+    Tgame_sync * game_sync = get_game_sync();
     //chequear el size
-    game_status * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
+    Tgame_state * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
     
     int player_number = 0;
     pid_t pid=getpid();

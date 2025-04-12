@@ -21,7 +21,7 @@ int set_pipes(pipe_array pipes, int num_players) {
     return SUCCESS;
 }
 
-int set_players_processes(Tparameters* params,game_status* game_state, pipe_array pipes) {
+int set_players_processes(Tparameters * params, Tgame_state * game_state, pipe_array pipes) {
     int pid = 0;
     for (int i = 0; i < params->amount_players; i++) {
         if ((pid = fork()) < 0) {

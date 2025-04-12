@@ -28,14 +28,14 @@ void * create_shmem(const char * name, size_t size, mode_t mode) {
 	close(fd);
 	return p;
 }
-game_status * create_game_state(size_t size) {
-	return (game_status *) create_shmem("/game_state", size, 0644);
+Tgame_state * create_game_state(size_t size) {
+	return (Tgame_state *) create_shmem("/game_state", size, 0644);
 }
-semaphores_status * create_game_sync() {
-	return (semaphores_status *) create_shmem("/game_sync", sizeof(semaphores_status), 0666);
+Tgame_sync * create_game_sync() {
+	return (Tgame_sync *) create_shmem("/game_sync", sizeof(Tgame_sync), 0666);
 }
 
-game_status * get_game_state(size_t size) {
+Tgame_state * get_game_state(size_t size) {
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open("/game_state", O_RDONLY, 0644/* 110100100 rwxrwxrwx*/);
@@ -51,10 +51,10 @@ game_status * get_game_state(size_t size) {
 		exit(EXIT_FAILURE);
 	}
 	close(fd);
-	return (game_status *) p;
+	return (Tgame_state *) p;
 }
 
-semaphores_status * get_game_sync() {
+Tgame_sync * get_game_sync() {
 	int fd;
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open("/game_sync", O_RDWR, 0666/* 110110110 rwxrwxrwx*/);
@@ -64,35 +64,35 @@ semaphores_status * get_game_sync() {
 		perror("get_game_sync");
 		exit(EXIT_FAILURE);
 	}
-	void * p = mmap(NULL, sizeof(semaphores_status), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	void * p = mmap(NULL, sizeof(Tgame_sync), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED) {
 		perror("mmap");
 		exit(EXIT_FAILURE);
 	}
 	close(fd);
-	return (semaphores_status *) p;
+	return (Tgame_sync *) p;
 }
 
-void munmap_game_state(game_status * ptr, size_t size) {
+void munmap_game_state(Tgame_state * ptr, size_t size) {
 	munmap(ptr, size);
 }
 
-void munmap_game_sync(semaphores_status * ptr) {
-	munmap((void *)ptr, sizeof(semaphores_status));
+void munmap_game_sync(Tgame_sync * ptr) {
+	munmap((void *)ptr, sizeof(Tgame_sync));
 }
 
-void free_game_sync(semaphores_status * ptr) {
+void free_game_sync(Tgame_sync * ptr) {
 	shm_unlink("/game_sync");
 	munmap_game_sync(ptr);
 }
 
-void free_game_state(game_status * ptr, size_t size) {
+void free_game_state(Tgame_state * ptr, size_t size) {
 	shm_unlink("/game_state");
 	munmap_game_state(ptr, size);
 }
 
 
-void exit_error(game_status * game_ptr, semaphores_status * sync_ptr, size_t size_game_state) {
+void exit_error(Tgame_state * game_ptr, Tgame_sync * sync_ptr, size_t size_game_state) {
     free_game_sync(sync_ptr);
 	free_game_state(game_ptr, size_game_state);
     exit(EXIT_FAILURE);

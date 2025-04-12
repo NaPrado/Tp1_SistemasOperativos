@@ -19,16 +19,16 @@ typedef struct {
     unsigned short x, y; // Coordenadas x e y en el tablero 
     pid_t pid; // Identificador de proceso 
     bool cant_move; // Indica si el jugador no tiene movimientos válidos disponibles 
-  } player_status;
+  } Tplayer_state;
 
 typedef struct { 
   unsigned short width; // Ancho del tablero 
   unsigned short height; // Alto del tablero 
   unsigned int amount_players; // Cantidad de jugadores 
-  player_status players[MAX_NUM_PLAYERS]; // Lista de jugadores  
+  Tplayer_state players[MAX_NUM_PLAYERS]; // Lista de jugadores  
   bool can_end; // Indica si el juego no se ha terminado 
   int board[]; // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1  
-} game_status;
+} Tgame_state;
 
 typedef struct { 
   sem_t show_needed;  // Indica a la vista que hay cambios por imprimir  
@@ -37,7 +37,7 @@ typedef struct {
   sem_t game_state_mutex;  // Protege el estado del juego contra modificaciones concurrentes  
   sem_t player_read_count_mutex;  // Protege la variable 'player_reading_status'  
   unsigned int player_reading_status;  // Cantidad de jugadores leyendo el estado  
-} semaphores_status;
+} Tgame_sync;
 typedef struct {
     size_t width; // ancho del tablero
     size_t height; // alto del tablero
