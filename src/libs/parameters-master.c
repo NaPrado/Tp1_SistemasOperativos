@@ -7,6 +7,8 @@
 
 #define OPT_STRING "w:h:d:s:v:t:p:"
 
+#define INICIAL_SLEEP_TIME 3
+
 enum params_default {
     DEF_WIDTH = 10, 
     DEF_HEIGHT = 10, 
@@ -104,4 +106,5 @@ void print_inicial_state(Tparameters params) {
     for (int i = 0; i < params.amount_players; i++) {
         printf("  %s\n", params.players[i]);
     }
+    sleep(INICIAL_SLEEP_TIME);
 }

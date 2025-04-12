@@ -234,3 +234,7 @@ void check_players_timeout(Tgame_state * game_state/* , int pipe[2] */) {
         }
     }
 }
+
+void delay(size_t delay) {
+    usleep(delay * 1000);
+}

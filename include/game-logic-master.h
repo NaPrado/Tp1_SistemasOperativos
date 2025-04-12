@@ -23,6 +23,8 @@ void verify_players_cant_move(Tgame_state * game_state);
 
 void timeout_update(size_t player_number);
 
-void check_players_timeout(Tgame_state * game_state/* , int pipe[2] */);
+void check_players_timeout(Tgame_state * game_state);
+
+void delay(size_t delay);
 
 #endif

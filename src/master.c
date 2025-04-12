@@ -47,7 +47,7 @@ int main(int argc, char const *argv[]) {
     while (!game_state->can_end) {
 
         // print view
-        usleep(params.delay * 1000);
+        delay(params.delay);
         master_signal_print(game_sync);
 
         check_players_timeout(game_state);
