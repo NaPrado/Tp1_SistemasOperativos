@@ -10,6 +10,8 @@
 #include "sync-lib.h"
 #include "shm.h"
 
+#define INVALID -1
+
 int main(int argc, char const *argv[]) {
 
     Tparameters params = get_default_params();
@@ -53,7 +55,7 @@ int main(int argc, char const *argv[]) {
         check_players_timeout(game_state);
 
         // leer movimiento
-        Tplayer_move move = {.player = -1, .move = -1};
+        Tplayer_move move = {.player = INVALID, .move = INVALID};
         if (get_player_move(pipes, game_state->amount_players, &move) == ERROR) {
             game_state->can_end = true;
             break;
