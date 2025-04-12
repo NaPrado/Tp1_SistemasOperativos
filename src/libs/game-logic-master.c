@@ -83,13 +83,10 @@ static void set_initial_players_state(Tgame_state * game_state, char * players[]
 
 static size_t timeout = 0;
 
-static void set_timeout_value(size_t new_timeout) {
-    timeout = new_timeout;
-}
-
 static time_t timeouts[MAX_NUM_PLAYERS] = {0};
 
-static void set_initial_timeouts() {
+static void set_initial_timeouts(size_t timeout_value) {
+    timeout = timeout_value;
     time_t current_time = time(NULL);
     for (size_t i = 0; i < MAX_NUM_PLAYERS; i++) {
         timeouts[i] = current_time;
@@ -105,8 +102,7 @@ void set_initial_game_state(Tgame_state * game_state, Tparameters params) {
     fill_board(game_state->width, game_state->height, game_state->board);
     set_inicial_players_position(game_state);
     set_initial_players_state(game_state, params.players);
-    set_timeout_value(params.timeout);
-    set_initial_timeouts();
+    set_initial_timeouts(params.timeout);
 }
 
 int has_next_move(Tgame_state * game_state, int player) {
