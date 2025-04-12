@@ -43,7 +43,6 @@ int main(int argc, char const *argv[]) {
         exit_error(game_state, game_sync, GAME_STATUS_SIZE(game_state, params.width, params.height));
     }
 
-    int player=0;
     // loop principal
     while (!game_state->can_end) {
 
@@ -56,7 +55,7 @@ int main(int argc, char const *argv[]) {
 
         // leer movimiento
         Tplayer_move move = {.player = -1, .move = -1};
-        if (get_player_move(pipes, game_state->amount_players, &move, &player) == ERROR) {
+        if (get_player_move(pipes, game_state->amount_players, &move) == ERROR) {
             game_state->can_end = true;
             break;
         }

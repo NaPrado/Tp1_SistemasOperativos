@@ -13,7 +13,7 @@ void set_initial_game_state(Tgame_state * game_state, Tparameters params);
 
 int valid_possition(Tgame_state * game_state, int x, int y);
 
-int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move * move, int * player_number);
+int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move * move);
 
 int has_next_move(Tgame_state * game_state, int player);
 
