@@ -12,8 +12,6 @@
 
 int main(int argc, char const *argv[]) {
 
-    printf("\033[H\033[J\n");
-
     Tparameters params = get_default_params();
 
     if (set_params(argc, (char * const *) argv, &params) == ERROR) {

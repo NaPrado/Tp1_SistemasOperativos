@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <libgen.h>
 #include <time.h>
+#include <math.h>
 
 
 typedef struct {
@@ -46,6 +47,26 @@ static void fill_board(int width, int height, int * board) {
     }
 }
 
+static void set_inicial_players_position(game_status * game_state) {
+
+    double h = (game_state->height - 1) / 2.0;
+    double k = (game_state->width - 1) / 2.0;
+
+    double a = h * 0.8;
+    double b = k * 0.8;
+
+    for (int i = 0; i < game_state->amount_players; i++) {
+
+        double theta = 2.0 * M_PI * i / game_state->amount_players;
+
+        double xf = k + b * sin(theta);
+        double yf = h + a * cos(theta);
+
+        game_state->players[i].x = (int) round(xf);
+        game_state->players[i].y = (int) round(yf);
+    }
+}
+
 static void set_initial_players_state(game_status * game_state, char * players[]) {
     for (int i = 0; i < game_state->amount_players; i++) {
         char name[150];
@@ -54,8 +75,6 @@ static void set_initial_players_state(game_status * game_state, char * players[]
         game_state->players[i].points = 0;
         game_state->players[i].amount_invalid_movements = 0;
         game_state->players[i].amount_valid_movements = 0;
-        game_state->players[i].x = rand() % game_state->width;
-        game_state->players[i].y = rand() % game_state->height;
         game_state->players[i].pid = 0;
         game_state->players[i].cant_move = 0;
         BOARD_AT_PLAYER(game_state, i) = i * (-1);
@@ -83,6 +102,7 @@ void set_initial_game_state(game_status * game_state, Tparameters params) {
     game_state->can_end = false;
     game_state->amount_players = params.amount_players;
     fill_board(game_state->width, game_state->height, game_state->board);
+    set_inicial_players_position(game_state);
     set_initial_players_state(game_state, params.players);
     set_timeout_value(params.timeout);
     srand(params.seed);
