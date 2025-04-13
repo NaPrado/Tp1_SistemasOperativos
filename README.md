@@ -4,12 +4,10 @@ Primer Trabajo Práctico Especial de la materia Sistemas Operativos (72.11) del 
 
 ## Objetivo General del Trabajo
 
-Enternder y desarrollar un sistema de procesos que se comuniquen y sincronicen en un sistema POSIX.
+Entender y desarrollar un sistema de procesos que se comuniquen y sincronicen en un sistema POSIX.
 
 ## Instrucciones de Compilación y Ejecución
 
-+ Clonar repositorio de GitHub:
-    ```$> git clone <repositorio>```
 + Inicializar contenedor de docker:
     ```$> ./dockerRun.sh```
 + Moverse al root, Compilar y Linkeditar el proyecto:
