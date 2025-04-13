@@ -16,4 +16,4 @@ Enternder y desarrollar un sistema de procesos que se comuniquen y sincronicen e
     ```cd root```
     ```make```
 + Ejecutar el binario principal con los parámetros deseados:
-    ```$> ./bin/master [parámetros] corre el proyecto```
+    ```$> ./bin/master [parámetros]```
