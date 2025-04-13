@@ -139,6 +139,8 @@ int main(int argc, char const *argv[]) {
         signal_view(game_sync);
     }
 
+    signal_view(game_sync);
+
     munmap_game_state(game_state, GAME_STATUS_SIZE(game_state, width, height));
     munmap_game_sync(game_sync);
 

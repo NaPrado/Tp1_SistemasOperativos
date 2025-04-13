@@ -77,6 +77,7 @@ int main(int argc, char const *argv[]) {
         }
 
     }
+    
     // ultimo post para que la vista termine
     master_signal_print(game_sync);
     
