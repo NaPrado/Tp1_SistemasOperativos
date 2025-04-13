@@ -77,7 +77,11 @@ int main(int argc, char const *argv[]) {
         }
 
     }
-    
+
+    close_pending_pipes(pipes, game_state->amount_players);
+
+    sleep(50);
+
     // ultimo post para que la vista termine
     master_signal_print(game_sync);
     

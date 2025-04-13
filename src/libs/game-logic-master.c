@@ -192,7 +192,8 @@ int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move)
         return ERROR;
     }
 
-    while (player_number < amount_players) {
+    int i = 0;
+    while (i++ < amount_players) {
         if (pipes[player_number][0] != -1 && FD_ISSET(pipes[player_number][0], &read_fds)) {
             char buffer;
             int bytes_read = read(pipes[player_number][0], &buffer, 1);
@@ -200,15 +201,7 @@ int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move)
                 perror("Error: read failed");
                 return ERROR;
             }
-            if (bytes_read == 0) {
-                // Pipe cerrado
-                printf("Player %d disconnected.\n", player_number);
-                move->player = -1;
-                move->move = -1;
-                close(pipes[player_number][0]);
-                pipes[player_number][0] = -1;
-                return SUCCESS; // que un jugador se haya desconectado no es un error
-            } else {
+            if (bytes_read > 0) {
                 move->player = player_number;
                 move->move = buffer;
                 player_number++;

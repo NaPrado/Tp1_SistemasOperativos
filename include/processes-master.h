@@ -11,5 +11,6 @@ int set_players_processes(Tparameters * params, Tgame_state * game_state, pipe_a
 
 int set_view_process(const char * view_name, size_t width, size_t height);
 
+void close_pending_pipes(pipe_array pipes, size_t amount_players);
 
 #endif

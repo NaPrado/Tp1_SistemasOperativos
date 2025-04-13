@@ -92,3 +92,14 @@ int set_view_process(const char * view_name, size_t width, size_t height) {
     }
     return SUCCESS;
 }
+
+void close_pending_pipes(pipe_array pipes, size_t amount_players) {
+    for (size_t i = 0; i < amount_players; i++) {
+        if (pipes[i][STDIN_FILENO] != -1) {
+            close(pipes[i][STDIN_FILENO]);
+        }
+        if (pipes[i][STDOUT_FILENO] != -1) {
+            close(pipes[i][STDOUT_FILENO]);
+        }
+    }
+}
