@@ -23,4 +23,5 @@ void free_game_state(Tgame_state * ptr,size_t size);
 
 //
 void exit_error(Tgame_state * game_ptr, Tgame_sync * sync_ptr, size_t size_game_state);
+
 #endif

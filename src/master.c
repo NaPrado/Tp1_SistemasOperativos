@@ -31,12 +31,12 @@ int main(int argc, char const *argv[]) {
     // Abrir pipes
     pipe_array pipes;
 
-    // Crear procesos de jugadores
-    if (set_players_processes(&params, game_state, pipes) == ERROR) {
+    pid_t view_pid = set_view_process(params.view, game_state->width, game_state->height);
+    if (view_pid == ERROR) {
         exit_error(game_state, game_sync, GAME_STATUS_SIZE(game_state, params.width, params.height));
     }
 
-    if (set_view_process(params.view, game_state->width, game_state->height) == ERROR) {
+    if (set_players_processes(&params, game_state, pipes) == ERROR) {
         exit_error(game_state, game_sync, GAME_STATUS_SIZE(game_state, params.width, params.height));
     }
 
@@ -78,7 +78,7 @@ int main(int argc, char const *argv[]) {
     // ultimo post para que la vista termine
     master_signal_print(game_sync);
     
-    WAIT_CHILDS(game_state->amount_players + 1);
+    wait_processes(game_state, view_pid);
 
     destroy_semaphores(game_sync);
 

@@ -8,6 +8,7 @@
 #define MAX_PLAYER_LENGTH 16
 
 typedef int pipe_array[MAX_NUM_PLAYERS][2];
+#define CLOSED_PIPE -1
 
 #define GAME_STATUS_SIZE(game_state, width, height) (sizeof(*game_state) + (sizeof(int) * (width * height)))
 

@@ -100,7 +100,7 @@ int set_view_process(const char * view_name, size_t width, size_t height) {
         execve(view_name, new_argv, NULL);
         return ERROR;
     }
-    return SUCCESS;
+    return getpid();
 }
 
 void close_pending_pipes(pipe_array pipes, size_t amount_players) {
@@ -110,6 +110,33 @@ void close_pending_pipes(pipe_array pipes, size_t amount_players) {
         }
         if (pipes[i][STDOUT_FILENO] != ERROR) {
             close(pipes[i][STDOUT_FILENO]);
+        }
+    }
+}
+
+void wait_processes(Tgame_state * game_state, pid_t view_pid) {
+    int status;
+    waitpid(view_pid, &status, 0);
+    if (WIFEXITED(status)) {
+        printf("View exited (%d)\n", WEXITSTATUS(status));
+    } else {
+        printf("View process exited with an error\n");
+    }
+
+    for (size_t i = 0; i < game_state->amount_players; i++) {
+        if (game_state->players[i].pid != ERROR) {
+            waitpid(game_state->players[i].pid, &status, 0);
+            if (WIFEXITED(status)) {
+                printf("Player %s (%ld) exited (%d) with a score of %d / %d / %d\n", 
+                       game_state->players[i].name_player,
+                       i,
+                       WEXITSTATUS(status),
+                       game_state->players[i].points,
+                       game_state->players[i].amount_valid_movements,
+                       game_state->players[i].amount_invalid_movements);
+            } else {
+                printf("Player %s (%ld) exited with error\n", game_state->players[i].name_player, i);
+            }
         }
     }
 }
