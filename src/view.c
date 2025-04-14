@@ -19,6 +19,8 @@
 
 #define BOARD_AT(board, w, i, j) ((board)[(i) * (w) + (j)])
 
+#define PLAY_SOUND(game_state) check_if_invalid((game_state)->players, (game_state)->amount_players) ? "\a" : ""
+
 // Vector de códigos de color
 const char *colores[] = {
     "\033[40;97m",  // Fondo negro, letra blanca
@@ -142,7 +144,7 @@ int main(int argc, char const *argv[]) {
         
         print_view(game_state->board, height, width, game_state);
         
-        printf("%s", check_if_invalid(game_state->players, game_state->amount_players) ? "\a" : "");
+        printf("%s", PLAY_SOUND(game_state));
         
         print_stats(game_state);
         
