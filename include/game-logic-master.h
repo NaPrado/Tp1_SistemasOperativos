@@ -9,6 +9,8 @@ typedef struct {
     int move;
 } Tplayer_move;
 
+#define INVALID -1
+
 void set_initial_game_state(Tgame_state * game_state, Tparameters params);
 
 int valid_possition(Tgame_state * game_state, int x, int y);

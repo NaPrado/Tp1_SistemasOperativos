@@ -10,14 +10,12 @@
 #include "sync-lib.h"
 #include "shm.h"
 
-#define INVALID -1
-
 int main(int argc, char const *argv[]) {
 
     Tparameters params = get_default_params();
 
     if (set_params(argc, (char * const *) argv, &params) == ERROR) {
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     print_inicial_state(params);
@@ -32,9 +30,6 @@ int main(int argc, char const *argv[]) {
 
     // Abrir pipes
     pipe_array pipes;
-    if (set_pipes(pipes, game_state->amount_players) == ERROR) {
-        exit_error(game_state, game_sync, GAME_STATUS_SIZE(game_state, params.width, params.height));
-    }
 
     // Crear procesos de jugadores
     if (set_players_processes(&params, game_state, pipes) == ERROR) {

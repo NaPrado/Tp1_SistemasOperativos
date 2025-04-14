@@ -1,4 +1,6 @@
 #include "shm.h"
+#include "return-codes.h"
+
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -17,15 +19,15 @@ static key_t generate_key(const char *name) {
     FILE *file = fopen(name, "w");
     if (!file) {
         perror("fopen");
-        exit(EXIT_FAILURE);
+        return ERROR;
     }
     fclose(file);
 
     // Generate the key
     key_t key = ftok(name, 1);
-    if (key == -1) {
+    if (key == ERROR) {
         perror("ftok");
-        exit(EXIT_FAILURE);
+        return ERROR;
     }
     return key;
 }
@@ -42,19 +44,19 @@ static void * create_shmem(const char * name, size_t size, mode_t mode) {
 	fd = shm_open(name, O_RDWR | O_CREAT, mode/* 110110110 rwxrwxrwx*/);
 	//shm_open es un open
 	//mode solo para crear, sino se ignora
-	if (fd == -1) {
+	if (fd == ERROR) {
 		perror("shm_open");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	//solo para crearla
-	if (-1 == ftruncate(fd, size)) {
+	if (ERROR == ftruncate(fd, size)) {
 		perror("ftruncate");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	p = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED) {
 		perror("mmap");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	close(fd);
 	return p;
@@ -66,14 +68,14 @@ static void * create_shmem(const char * name, size_t size, mode_t mode, int * sh
     void * p;
     key_t key = generate_key(name);
     *shm_id = shmget(key, size, IPC_CREAT | IPC_EXCL | mode);
-    if (*shm_id == -1) {
+    if (*shm_id == ERROR) {
         perror("shmget");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     p = shmat(*shm_id, NULL, 0);
-    if (p == (void *)-1) {
+    if (p == (void *)ERROR) {
         perror("shmat");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     memset(p, 0, size); // Initialize memory to zero
 	return p;
@@ -104,33 +106,33 @@ Tgame_state * get_game_state(size_t size) {
 	//shm_open(const char *name,int oflag, mode_t mode);
 	fd = shm_open("/game_state", O_RDONLY, 0644/* 110100100 rwxrwxrwx*/);
 
-	if (fd == -1) {
+	if (fd == ERROR) {
 		perror("get_game_state");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	p = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED) {
 		perror("mmap");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	close(fd);
 #else
     key_t key = ftok("/tmp/game_state", 1); // Generate a unique key
-    if (key == -1) {
+    if (key == ERROR) {
         perror("ftok");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     game_state_shmid = shmget(key, size, 0666); // Get shared memory
-    if (game_state_shmid == -1) {
+    if (game_state_shmid == ERROR) {
         perror("shmget");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     p = shmat(game_state_shmid, NULL, 0); // Attach shared memory
-    if (p == (void *)-1) {
+    if (p == (void *)ERROR) {
         perror("shmat");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 #endif
 	return (Tgame_state *) p;
@@ -140,56 +142,63 @@ Tgame_sync * get_game_sync() {
     void * p;
 #ifdef _POSIX_VERSION
     int fd = shm_open("/game_sync", O_RDWR, 0666);
-    if (fd == -1) {
+    if (fd == ERROR) {
         perror("shm_open");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     p = mmap(NULL, sizeof(Tgame_sync), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
     if (p == MAP_FAILED) {
         perror("mmap");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     close(fd);
 #else
     key_t key = ftok("/tmp/game_sync", 1);
-    if (key == -1) {
+    if (key == ERROR) {
         perror("ftok");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     game_sync_shmid = shmget(key, sizeof(Tgame_sync), 0666);
-    if (game_sync_shmid == -1) {
+    if (game_sync_shmid == ERROR) {
         perror("shmget");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     p = shmat(game_sync_shmid, NULL, 0);
-    if (p == (void *)-1) {
+    if (p == (void *)ERROR) {
         perror("shmat");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 #endif
     return (Tgame_sync *) p;
 }
 
-void munmap_game_state(Tgame_state * ptr, size_t size) {
+int munmap_game_state(Tgame_state * ptr, size_t size) {
 #ifdef _POSIX_VERSION
-    munmap(ptr, size);
+    if (munmap(ptr, size) == ERROR) {
+        perror("munmap");
+        return ERROR;
+    }
 #else
-    if (shmdt(ptr) == -1) {
+    if (shmdt(ptr) == ERROR) {
         perror("shmdt");
-        exit(EXIT_FAILURE);
+        return ERROR;
     }
 #endif
+    return SUCCESS;
 }
 
-void munmap_game_sync(Tgame_sync * ptr) {
+int munmap_game_sync(Tgame_sync * ptr) {
 #ifdef _POSIX_VERSION
-    munmap(ptr, sizeof(Tgame_sync));
+    if (munmap(ptr, sizeof(Tgame_sync)) == ERROR) {
+        perror("munmap");
+        return ERROR;
+    }
 #else
-    if (shmdt(ptr) == -1) {
+    if (shmdt(ptr) == ERROR) {
         perror("shmdt");
-        exit(EXIT_FAILURE);
     }
 #endif
+    return SUCCESS;
 }
 
 void free_game_sync(Tgame_sync * ptr) {
@@ -197,9 +206,8 @@ void free_game_sync(Tgame_sync * ptr) {
     shm_unlink("/game_sync");
     munmap_game_sync(ptr);
 #else
-    if (shmctl(game_sync_shmid, IPC_RMID, NULL) == -1) {
+    if (shmctl(game_sync_shmid, IPC_RMID, NULL) == ERROR) {
         perror("shmctl IPC_RMID");
-        exit(EXIT_FAILURE);
     }
     munmap_game_sync(ptr);
 #endif
@@ -210,9 +218,8 @@ void free_game_state(Tgame_state * ptr, size_t size) {
     shm_unlink("/game_state");
     munmap_game_state(ptr, size);
 #else
-    if (shmctl(game_state_shmid, IPC_RMID, NULL) == -1) {
+    if (shmctl(game_state_shmid, IPC_RMID, NULL) == ERROR) {
         perror("shmctl IPC_RMID");
-        exit(EXIT_FAILURE);
     }
     munmap_game_state(ptr, size);
 #endif

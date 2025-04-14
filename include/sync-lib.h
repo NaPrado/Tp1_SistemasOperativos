@@ -5,23 +5,23 @@
 
 #include "structures.h"
 
-void set_init_semaphores(Tgame_sync * game_sync);
+int set_init_semaphores(Tgame_sync * game_sync);
 
-void set_master_writing(Tgame_sync * game_sync);
+int set_master_writing(Tgame_sync * game_sync);
 
-void master_signal_print(Tgame_sync * game_sync);
+int master_signal_print(Tgame_sync * game_sync);
 
-void unset_master_writing(Tgame_sync * game_sync);
+int unset_master_writing(Tgame_sync * game_sync);
 
-void set_player_reading(Tgame_sync * game_sync);
+int set_player_reading(Tgame_sync * game_sync);
 
-void unset_player_reading(Tgame_sync * game_sync);
+int unset_player_reading(Tgame_sync * game_sync);
 
-void wait_view(Tgame_sync * game_sync);
+int wait_view(Tgame_sync * game_sync);
 
-void signal_view(Tgame_sync * game_sync);
+int signal_view(Tgame_sync * game_sync);
 
-void destroy_semaphores(Tgame_sync * game_sync);
+int destroy_semaphores(Tgame_sync * game_sync);
 
 #ifndef _POSIX_VERSION
 

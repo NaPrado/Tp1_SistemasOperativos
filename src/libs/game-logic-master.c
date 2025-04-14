@@ -155,7 +155,7 @@ static int get_max_fd(pipe_array pipes, size_t amount_players) {
 
 static int check_pipes_open(pipe_array pipes, size_t amount_players) {
     for (int i = 0; i < amount_players; i++) {
-        if (pipes[i][0] != -1) {
+        if (pipes[i][0] != CLOSED_PIPE) {
             return true;
         }
     }
@@ -169,7 +169,7 @@ int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move)
     FD_ZERO(&read_fds);
 
     for (int i = 0; i < amount_players; i++) {
-        if (pipes[i][0] != -1) {
+        if (pipes[i][0] != CLOSED_PIPE) {
             FD_SET(pipes[i][0], &read_fds);
         }
     }
@@ -194,10 +194,10 @@ int get_player_move(pipe_array pipes, size_t amount_players, Tplayer_move *move)
 
     int i = 0;
     while (i++ < amount_players) {
-        if (pipes[player_number][0] != -1 && FD_ISSET(pipes[player_number][0], &read_fds)) {
+        if (pipes[player_number][0] != CLOSED_PIPE && FD_ISSET(pipes[player_number][0], &read_fds)) {
             char buffer;
             int bytes_read = read(pipes[player_number][0], &buffer, 1);
-            if (bytes_read == -1) {
+            if (bytes_read == ERROR) {
                 perror("Error: read failed");
                 return ERROR;
             }

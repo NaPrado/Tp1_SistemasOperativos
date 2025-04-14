@@ -12,11 +12,14 @@ enum PIPES {
     WRITE_END = 1
 };
 
-int set_pipes(pipe_array pipes, int num_players) {
-    for (int i = 0; i < num_players; i++) {
-        if (pipe(pipes[i]) == -1) {
+static int close_other_pipes(pipe_array pipes, int num_players, int current_player) {
+    int i = STDERR_FILENO + 1;
+    while (i < pipes[current_player][STDIN_FILENO]) {
+        if (close(i) == -1) {
+            perror("Error: close read end");
             return ERROR;
         }
+        i++;
     }
     return SUCCESS;
 }
@@ -24,20 +27,27 @@ int set_pipes(pipe_array pipes, int num_players) {
 int set_players_processes(Tparameters * params, Tgame_state * game_state, pipe_array pipes) {
     int pid = 0;
     for (int i = 0; i < params->amount_players; i++) {
+        if (pipe(pipes[i]) == ERROR) {
+            return ERROR;
+        }
         if ((pid = fork()) < 0) {
             perror("Error: player fork failed");
             return ERROR;
         } else if (pid == 0) { // hijo
-            if (close(pipes[i][READ_END]) == -1) {
-                perror("Error: pipe setting");
+            if (close(pipes[i][READ_END]) == ERROR) {
+                perror("Error: close read end");
                 return ERROR;
             }
-            if (dup2(pipes[i][WRITE_END], STDOUT_FILENO) == -1) {
-                perror("Error: pipe setting");
+            if (dup2(pipes[i][WRITE_END], STDOUT_FILENO) == ERROR) {
+                perror("Error: dup2 write end");
                 return ERROR;
             }
             if (close(pipes[i][WRITE_END]) == -1) {
-                perror("Error: pipe setting");
+                perror("Error: close write end");
+                return ERROR;
+            }
+            if (close_other_pipes(pipes, params->amount_players, i) == ERROR) {
+                perror("Error: close other pipes");
                 return ERROR;
             }
 
@@ -56,7 +66,7 @@ int set_players_processes(Tparameters * params, Tgame_state * game_state, pipe_a
             execve(params->players[i], new_argv, NULL);
             return ERROR;
         } else { // padre
-            if (close(pipes[i][WRITE_END]) == -1) {
+            if (close(pipes[i][WRITE_END]) == ERROR) {
                 return ERROR;
             }
             game_state->players[i].pid = pid;
@@ -95,10 +105,10 @@ int set_view_process(const char * view_name, size_t width, size_t height) {
 
 void close_pending_pipes(pipe_array pipes, size_t amount_players) {
     for (size_t i = 0; i < amount_players; i++) {
-        if (pipes[i][STDIN_FILENO] != -1) {
+        if (pipes[i][STDIN_FILENO] != ERROR) {
             close(pipes[i][STDIN_FILENO]);
         }
-        if (pipes[i][STDOUT_FILENO] != -1) {
+        if (pipes[i][STDOUT_FILENO] != ERROR) {
             close(pipes[i][STDOUT_FILENO]);
         }
     }
