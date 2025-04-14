@@ -1,6 +1,8 @@
 #ifndef SEMAPHORES_MASTER_H
 #define SEMAPHORES_MASTER_H
 
+#include <unistd.h>
+
 #include "structures.h"
 
 void set_init_semaphores(Tgame_sync * game_sync);
@@ -20,5 +22,11 @@ void wait_view(Tgame_sync * game_sync);
 void signal_view(Tgame_sync * game_sync);
 
 void destroy_semaphores(Tgame_sync * game_sync);
+
+#ifndef _POSIX_VERSION
+
+int init_systemv_semaphores(void);
+
+#endif
 
 #endif

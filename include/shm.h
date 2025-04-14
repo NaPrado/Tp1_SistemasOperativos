@@ -2,9 +2,8 @@
 #define SHM_H
 #include <stdlib.h>
 #include "structures.h"
-// Crean SHM y lo mapea (para master)
-void * create_shmem(const char * name, size_t size, mode_t mode);
 
+// Crean SHM y lo mapea (para master)
 Tgame_state * create_game_state(size_t size);
 
 Tgame_sync * create_game_sync();

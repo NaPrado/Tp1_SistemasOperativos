@@ -62,6 +62,14 @@ int main(int argc, char const *argv[]){
     Tgame_sync * game_sync = get_game_sync();
     //chequear el size
     Tgame_state * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
+
+
+#ifndef _POSIX_VERSION
+    if (init_systemv_semaphores() == ERROR) {
+        perror("Error: set_player_semaphore failed");
+        return EXIT_FAILURE;
+    }
+#endif
     
     int player_number = 0;
     pid_t pid=getpid();
@@ -93,6 +101,10 @@ int main(int argc, char const *argv[]){
         GET_BOARD(...);
 
         wait(readers_count_mutex);
+        if(readers--==1){
+            post(mutex);
+        }
+        post(readers_count_mutex);
 
     }
     */

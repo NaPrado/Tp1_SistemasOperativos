@@ -7,6 +7,7 @@
 #include "shm.h"
 #include "structures.h"
 #include "sync-lib.h"
+#include "return-codes.h"
 
 #define RESET_COLOR "\033[0;0m"
 
@@ -123,6 +124,15 @@ int main(int argc, char const *argv[]) {
     Tgame_sync * game_sync = get_game_sync();
     //chequear el size
     Tgame_state * game_state = get_game_state(GAME_STATUS_SIZE(game_state, width, height));
+
+#ifndef _POSIX_VERSION
+
+    if (init_systemv_semaphores() == ERROR) {
+        perror("Error: set_player_semaphore failed");
+        return EXIT_FAILURE;
+    }
+
+#endif
 
     while (!game_state->can_end) {
         
