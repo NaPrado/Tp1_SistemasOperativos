@@ -39,10 +39,17 @@ int valid_possition(Tgame_state * game_state, int x, int y) {
             BOARD_AT(game_state, x, y) > 0);
 }
 
+#define PROB 0.05
+#define OBSTACLE -10
+
 static void fill_board(int width, int height, int * board) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            board[i * width + j] = randInt(1, 9);
+            if (randNormalize() < PROB) {
+                board[i * width + j] = OBSTACLE;
+            } else {
+                board[i * width + j] = randInt(1, 9);
+            }
         }
     }
 }

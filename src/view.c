@@ -68,6 +68,8 @@ void print_chomp_champs_logo(int width) {
     print_horizontal_border(width);
 }
 
+#define OBSTACLE -10
+
 void print_view(int * board, size_t height, size_t width, Tgame_state * game_state) {
 
     print_chomp_champs_logo(width);
@@ -75,8 +77,9 @@ void print_view(int * board, size_t height, size_t width, Tgame_state * game_sta
     for (size_t i = 0; i < height; i++) {
         printf("%s%s  *  %s", BG_GOLD, FG_BLACK, RESET_COLOR);
         for (size_t j = 0; j < width; j++) {
-
-            if (BOARD_AT(board, width, i, j) <= 0) {
+            if (BOARD_AT(board, width, i, j) == OBSTACLE) {
+                printf("%s ### ", BG_GOLD);
+            } else if (BOARD_AT(board, width, i, j) <= 0) {
                 size_t k = (-1) * BOARD_AT(board, width, i, j);
                 printf("%s     ", ES_CABEZA(game_state->players[k].x, game_state->players[k].y, j, i) ? colorescabeza[k] : colores[k]);
             } else {
